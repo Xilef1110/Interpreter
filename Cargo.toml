@@ -1,5 +1,5 @@
 [package]
-name = "Python Interpretor"
+name = "Python-Interpretor"
 version = "0.0.1"
 authors = ["Felix Stock <felix@stockfamily.at>"]
 edition = "2024"
