@@ -1,0 +1,17 @@
+[package]
+name = "Python Interpretor"
+version = "0.0.1"
+authors = ["Felix Stock <felix@stockfamily.at>"]
+edition = "2024"
+description = "A rudimentary Interpretor for python written in Rust"
+
+[dependencies]
+# Lists packages needed to compile and run the package's code
+
+
+[dev-dependencies]
+# Lists packages needed only for tests, examples, and benchmarks
+
+[build-dependencies]
+# Lists packages needed by build scripts (build.rs)
+# Example: cc = "1.0"
