@@ -5,7 +5,7 @@ use std::io::stdin;
 use std::io::stdout;
 use std::process;
 
-struct Status {
+struct Lox {
     had_error: bool,
 }
 
@@ -22,43 +22,75 @@ pub trait Run {
 
 fn main() {
     let arglength = std::env::args().len();
+    let mut Interp = Lox { had_error: false }
     if arglength > 2 {
         print!("To many arguments");
         process::exit(64);
     } else if arglength == 2 {
-        run_file(std::env::args().nth(1).expect("no file given"));
+        Interp.run_file(std::env::args().nth(1).expect("no file given"));
     } else {
-        run_prompt();
+        Interp.run_prompt();
     }
 }
 
-fn run_file(filepath: String) {
-    println!("Command line argument: {:?}", filepath);
-    let contents = std::fs::read_to_string(filepath).expect("File should have opened");
-    // println!("File contents:\n{contents}");
-    run(contents);
-}
+impl Run for Lox {
+    fn run_file(&self, filepath: String) {
+        println!("Command line argument: {:?}", filepath);
+        let contents = std::fs::read_to_string(filepath).expect("File should have opened");
+        // println!("File contents:\n{contents}");
+        self.run(contents);
+    }
 
-fn run_prompt() {
-    loop {
-        stdout().flush().unwrap();
-        match stdin().lines().next() {
-            Some(Ok(input)) => {
-                if input.trim() == "q" {
-                    break;
+    fn run_prompt(&self) {
+        loop {
+            stdout().flush().unwrap();
+            match stdin().lines().next() {
+                Some(Ok(input)) => {
+                    if input.trim() == "q" {
+                        break;
+                    }
+                    if input.trim().is_empty() {
+                        continue;
+                    }
+                    self.run(input);
                 }
-                if input.trim().is_empty() {
-                    continue;
-                }
-                run(input);
+                _ => {}
             }
-            _ => {}
         }
     }
+
+    fn run(&self, input: String) {
+        println!("{}", input);
+    }
 }
 
-fn run(input: String) {
-    println!("{}", input);
-}
+// fn run_file(filepath: String) {
+//     println!("Command line argument: {:?}", filepath);
+//     let contents = std::fs::read_to_string(filepath).expect("File should have opened");
+//     // println!("File contents:\n{contents}");
+//     run(contents);
+// }
+
+// fn run_prompt() {
+//     loop {
+//         stdout().flush().unwrap();
+//         match stdin().lines().next() {
+//             Some(Ok(input)) => {
+//                 if input.trim() == "q" {
+//                     break;
+//                 }
+//                 if input.trim().is_empty() {
+//                     continue;
+//                 }
+//                 run(input);
+//             }
+//             _ => {}
+//         }
+//     }
+// }
+
+// fn run(input: String) {
+//     println!("{}", input);
+// }
 
 // Error Handling
