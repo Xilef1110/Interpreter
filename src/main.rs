@@ -46,6 +46,7 @@ impl Run for Lox {
 
     fn run_prompt(&mut self) {
         loop {
+            print!("> ");
             stdout().flush().unwrap();
             match stdin().lines().next() {
                 Some(Ok(input)) => {
