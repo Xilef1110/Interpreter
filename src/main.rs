@@ -10,26 +10,26 @@ struct Lox {
 }
 
 pub trait ErrorHandling {
-    fn error(&self, line: i32, message: String);
-    fn report(&self, line: i32, loc: String, message: String);
+    fn error(&mut self, line: i32, message: String);
+    fn report(&mut self, line: i32, loc: String, message: String);
 }
 
 pub trait Run {
     fn run_file(&self, filepath: String);
-    fn run_prompt(&self);
+    fn run_prompt(&mut self);
     fn run(&self, input: String);
 }
 
 fn main() {
     let arglength = std::env::args().len();
-    let mut Interp = Lox { had_error: false }
+    let mut interp = Lox { had_error: false };
     if arglength > 2 {
         print!("To many arguments");
         process::exit(64);
     } else if arglength == 2 {
-        Interp.run_file(std::env::args().nth(1).expect("no file given"));
+        interp.run_file(std::env::args().nth(1).expect("no file given"));
     } else {
-        Interp.run_prompt();
+        interp.run_prompt();
     }
 }
 
@@ -39,9 +39,12 @@ impl Run for Lox {
         let contents = std::fs::read_to_string(filepath).expect("File should have opened");
         // println!("File contents:\n{contents}");
         self.run(contents);
+        if self.had_error {
+            std::process::exit(65)
+        }
     }
 
-    fn run_prompt(&self) {
+    fn run_prompt(&mut self) {
         loop {
             stdout().flush().unwrap();
             match stdin().lines().next() {
@@ -53,6 +56,7 @@ impl Run for Lox {
                         continue;
                     }
                     self.run(input);
+                    self.had_error = false;
                 }
                 _ => {}
             }
@@ -61,6 +65,16 @@ impl Run for Lox {
 
     fn run(&self, input: String) {
         println!("{}", input);
+    }
+}
+
+impl ErrorHandling for Lox {
+    fn error(&mut self, line: i32, message: String) {
+        self.report(line, "".to_string(), message);
+    }
+    fn report(&mut self, line: i32, loc: String, message: String) {
+        println!("[line {} ] Error {}: {}", line, loc, message);
+        self.had_error = true;
     }
 }
 
@@ -92,5 +106,3 @@ impl Run for Lox {
 // fn run(input: String) {
 //     println!("{}", input);
 // }
-
-// Error Handling
