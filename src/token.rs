@@ -6,12 +6,16 @@ struct Token<T> {
 }
 
 impl Token<T> {
-    fn token<T>(ttype: TokenType, lexeme: String, literal: T, line: i32) -> Token {
+    pub fn token<T>(ttype: TokenType, lexeme: String, literal: T, line: i32) -> Token {
         Token {
             ttype,
             lexeme,
             literal,
             line,
         }
+    }
+
+    pub fn toString(&self) -> String {
+        format!("{self.type} {self.lexeme} {self.literal}")
     }
 }
