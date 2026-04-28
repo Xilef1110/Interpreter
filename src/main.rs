@@ -9,16 +9,16 @@ struct Lox {
     had_error: bool,
 }
 
-pub trait ErrorHandling {
-    fn error(&mut self, line: i32, message: String);
-    fn report(&mut self, line: i32, loc: String, message: String);
-}
+// pub trait ErrorHandling {
+//     fn error(&mut self, line: i32, message: String);
+//     fn report(&mut self, line: i32, loc: String, message: String);
+// }
 
-pub trait Run {
-    fn run_file(&self, filepath: String);
-    fn run_prompt(&mut self);
-    fn run(&self, input: String);
-}
+// pub trait Run {
+//     fn run_file(&mut self, filepath: String);
+//     fn run_prompt(&mut self);
+//     fn run(&mut self, input: String);
+// }
 
 fn main() {
     let arglength = std::env::args().len();
@@ -33,8 +33,8 @@ fn main() {
     }
 }
 
-impl Run for Lox {
-    fn run_file(&self, filepath: String) {
+impl Lox {
+    fn run_file(&mut self, filepath: String) {
         println!("Command line argument: {:?}", filepath);
         let contents = std::fs::read_to_string(filepath).expect("File should have opened");
         // println!("File contents:\n{contents}");
@@ -64,46 +64,17 @@ impl Run for Lox {
         }
     }
 
-    fn run(&self, input: String) {
+    fn run(&mut self, input: String) {
         println!("{}", input);
     }
-}
 
-impl ErrorHandling for Lox {
-    fn error(&mut self, line: i32, message: String) {
+    pub fn error(&mut self, line: i32, message: String) {
         self.report(line, "".to_string(), message);
     }
+
+    // TODO: figure out how to make this private
     fn report(&mut self, line: i32, loc: String, message: String) {
         println!("[line {} ] Error {}: {}", line, loc, message);
         self.had_error = true;
     }
 }
-
-// fn run_file(filepath: String) {
-//     println!("Command line argument: {:?}", filepath);
-//     let contents = std::fs::read_to_string(filepath).expect("File should have opened");
-//     // println!("File contents:\n{contents}");
-//     run(contents);
-// }
-
-// fn run_prompt() {
-//     loop {
-//         stdout().flush().unwrap();
-//         match stdin().lines().next() {
-//             Some(Ok(input)) => {
-//                 if input.trim() == "q" {
-//                     break;
-//                 }
-//                 if input.trim().is_empty() {
-//                     continue;
-//                 }
-//                 run(input);
-//             }
-//             _ => {}
-//         }
-//     }
-// }
-
-// fn run(input: String) {
-//     println!("{}", input);
-// }
