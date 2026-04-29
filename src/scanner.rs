@@ -3,6 +3,7 @@ use std::str::Chars;
 #[path = "./token.rs"]
 mod token;
 use crate::Lox;
+use token::Token;
 use token::token_type::TokenType;
 
 pub struct Scanner<'a> {
@@ -31,19 +32,92 @@ impl<'a> Scanner<'a> {
             tokens: vec![],
             start: 0,
             current: 0,
-            line: 0,
+            line: 1,
             lox,
         }
     }
 
-    fn scan_token(&self) {
-        let c: Chars = "".chars();
+    fn scan_token(&mut self) {
+        let c: &str = self.advance();
+        let mut double = false;
         match c {
-            _ => println!("Error"), // To Do
+            "(" => self.add_token(TokenType::LeftParen),
+            ")" => self.add_token(TokenType::RightParen),
+            "{" => self.add_token(TokenType::LeftBrace),
+            "}" => self.add_token(TokenType::RightBrace),
+            "," => self.add_token(TokenType::COMMA),
+            "." => self.add_token(TokenType::DOT),
+            "-" => self.add_token(TokenType::MINUS),
+            "+" => self.add_token(TokenType::PLUS),
+            ";" => self.add_token(TokenType::SEMICOLON),
+            "*" => self.add_token(TokenType::STAR),
+            "!" => self.add_token(if self.match_next("=") {
+                double = true;
+                TokenType::BangEqual
+            } else {
+                TokenType::BANG
+            }),
+            "=" => self.add_token(if self.match_next("=") {
+                double = true;
+                TokenType::EqualEqual
+            } else {
+                TokenType::EQUAL
+            }),
+            "<" => self.add_token(if self.match_next("=") {
+                double = true;
+                TokenType::LessEqual
+            } else {
+                TokenType::LESS
+            }),
+            ">" => self.add_token(if self.match_next("=") {
+                double = true;
+                TokenType::GreaterEqual
+            } else {
+                TokenType::GREATER
+            }),
+            _ => self
+                .lox
+                .error(self.line, "Unexpected character".to_string()), // To Do
+        }
+        if double {
+            self.current += 1;
         }
     }
 
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len() as i32
+    }
+
+    fn add_token(&mut self, ttype: TokenType) {
+        // Copies the entire line
+        let mut text: String = self.source.clone();
+        // Cast start and current fields to usize
+        let start: usize = self.start as usize;
+        let current: usize = self.current as usize;
+        // Take the desired substring of source
+        text = text[start..current].to_string();
+        let tok = Token::new_token(ttype, text, self.line);
+        self.tokens.push(tok);
+    }
+
+    fn advance(&mut self) -> &str {
+        let start: usize = self.current as usize;
+        let end: usize = start + 1;
+        self.current += 1;
+        &self.source[start..end]
+    }
+
+    fn match_next(&self, expected: &str) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        let start: usize = self.current as usize;
+        let end: usize = start + 1;
+        if &self.source[start..end] != expected {
+            false
+        } else {
+            // self.current += 1;
+            true
+        }
     }
 }
