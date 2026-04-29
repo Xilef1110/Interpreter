@@ -1,5 +1,9 @@
+use std::str::Chars;
+
 #[path = "./token.rs"]
 mod token;
+use token::object_type::ObjectType;
+use token::token_type::TokenType;
 
 pub struct Scanner {
     source: String,
@@ -15,12 +19,8 @@ impl Scanner {
             self.start = self.current;
             self.scan_token();
         }
-        let tok = token::Token::new_token(
-            token::token_type::TokenType::EOF,
-            "".to_string(),
-            Option::None,
-            self.line,
-        );
+        let tok =
+            token::Token::new_token(TokenType::EOF, "".to_string(), ObjectType::None, self.line);
         self.tokens.push(tok);
         return self.tokens.clone();
     }
@@ -36,7 +36,10 @@ impl Scanner {
     }
 
     fn scan_token(&self) {
-        println!("scanToken")
+        let c: Chars = "".chars();
+        match c {
+            _ => println!("Error"), // To Do
+        }
     }
 
     fn is_at_end(&self) -> bool {

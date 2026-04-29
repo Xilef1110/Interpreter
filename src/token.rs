@@ -1,20 +1,21 @@
+#[path = "token/object_type.rs"]
+pub mod object_type;
+#[path = "token/token_type.rs"]
 pub mod token_type;
+
+use object_type::ObjectType;
+use token_type::TokenType;
 
 #[derive(Clone)]
 pub struct Token {
-    ttype: token_type::TokenType,
+    ttype: TokenType,
     lexeme: String,
-    literal: Option<String>,
+    literal: ObjectType,
     line: i32,
 }
 
 impl Token {
-    pub fn new_token(
-        ttype: token_type::TokenType,
-        lexeme: String,
-        literal: Option<String>,
-        line: i32,
-    ) -> Token {
+    pub fn new_token(ttype: TokenType, lexeme: String, literal: ObjectType, line: i32) -> Token {
         Token {
             ttype,
             lexeme,
