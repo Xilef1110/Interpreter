@@ -1,5 +1,6 @@
 pub mod token_type;
 
+#[derive(Clone)]
 pub struct Token {
     ttype: token_type::TokenType,
     lexeme: String,
@@ -30,3 +31,9 @@ impl Token {
         return "".to_string();
     }
 }
+
+// impl Clone for Token {
+//     fn clone(&self) -> Self {
+
+//     }
+// }

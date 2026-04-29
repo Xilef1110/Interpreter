@@ -22,7 +22,7 @@ impl Scanner {
             self.line,
         );
         self.tokens.push(tok);
-        return self.tokens;
+        return self.tokens.clone();
     }
 
     pub fn new_scanner(source: String) -> Scanner {
