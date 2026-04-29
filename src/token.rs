@@ -10,16 +10,14 @@ use token_type::TokenType;
 pub struct Token {
     ttype: TokenType,
     lexeme: String,
-    literal: ObjectType,
     line: i32,
 }
 
 impl Token {
-    pub fn new_token(ttype: TokenType, lexeme: String, literal: ObjectType, line: i32) -> Token {
+    pub fn new_token(ttype: TokenType, lexeme: String, line: i32) -> Token {
         Token {
             ttype,
             lexeme,
-            literal,
             line,
         }
     }

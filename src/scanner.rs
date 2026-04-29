@@ -2,7 +2,6 @@ use std::str::Chars;
 
 #[path = "./token.rs"]
 mod token;
-use token::object_type::ObjectType;
 use token::token_type::TokenType;
 
 pub struct Scanner {
@@ -19,8 +18,7 @@ impl Scanner {
             self.start = self.current;
             self.scan_token();
         }
-        let tok =
-            token::Token::new_token(TokenType::EOF, "".to_string(), ObjectType::None, self.line);
+        let tok = token::Token::new_token(TokenType::EOF, "".to_string(), self.line);
         self.tokens.push(tok);
         return self.tokens.clone();
     }

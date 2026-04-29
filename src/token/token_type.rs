@@ -24,9 +24,9 @@ pub enum TokenType {
     LessEqual,
 
     // Literals.
-    IDENTIFIER,
-    STRING,
-    NUMBER,
+    IDENTIFIER(String),
+    STRING(String),
+    NUMBER(f64),
 
     // Keywords.
     AND,
