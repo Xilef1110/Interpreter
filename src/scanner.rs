@@ -2,17 +2,19 @@ use std::str::Chars;
 
 #[path = "./token.rs"]
 mod token;
+use crate::Lox;
 use token::token_type::TokenType;
 
-pub struct Scanner {
+pub struct Scanner<'a> {
     source: String,
     tokens: Vec<token::Token>,
     start: i32,
     current: i32,
     line: i32,
+    lox: &'a mut Lox,
 }
 
-impl Scanner {
+impl<'a> Scanner<'a> {
     pub fn scan_tokens(&mut self) -> Vec<token::Token> {
         while !self.is_at_end() {
             self.start = self.current;
@@ -23,13 +25,14 @@ impl Scanner {
         return self.tokens.clone();
     }
 
-    pub fn new_scanner(source: String) -> Scanner {
+    pub fn new_scanner(source: String, lox: &'a mut Lox) -> Scanner<'a> {
         Scanner {
             source,
             tokens: vec![],
             start: 0,
             current: 0,
             line: 0,
+            lox,
         }
     }
 

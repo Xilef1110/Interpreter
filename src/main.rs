@@ -72,7 +72,7 @@ impl Lox {
 
     fn run(&mut self, input: String) {
         println!("{}", input);
-        let mut scanner: Scanner = scanner::Scanner::new_scanner(input);
+        let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
         // Vec<Token> = scanner.
     }
 
