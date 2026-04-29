@@ -1,9 +1,9 @@
 enum TokenType {
     // Single-character tokens.
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    LEFT_BRACE,
-    RIGHT_BRACE,
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
     COMMA,
     DOT,
     MINUS,
@@ -14,13 +14,13 @@ enum TokenType {
 
     // One or two character tokens.
     BANG,
-    BANG_EQUAL,
+    BangEqual,
     EQUAL,
-    EQUAL_EQUAL,
+    EqualEqual,
     GREATER,
-    GREATER_EQUAL,
+    GreaterEqual,
     LESS,
-    LESS_EQUAL,
+    LessEqual,
 
     // Literals.
     IDENTIFIER,
