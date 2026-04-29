@@ -1,76 +1,32 @@
-mod token {
-    enum TokenType {
-        // Single-character tokens.
-        LeftParen,
-        RightParen,
-        LeftBrace,
-        RightBrace,
-        COMMA,
-        DOT,
-        MINUS,
-        PLUS,
-        SEMICOLON,
-        SLASH,
-        STAR,
+pub mod token_type;
 
-        // One or two character tokens.
-        BANG,
-        BangEqual,
-        EQUAL,
-        EqualEqual,
-        GREATER,
-        GreaterEqual,
-        LESS,
-        LessEqual,
+pub struct Token {
+    ttype: token_type::TokenType,
+    lexeme: String,
+    literal: Option<String>,
+    line: i32,
+}
 
-        // Literals.
-        IDENTIFIER,
-        STRING,
-        NUMBER,
-
-        // Keywords.
-        AND,
-        CLASS,
-        ELSE,
-        FALSE,
-        FUN,
-        FOR,
-        IF,
-        NIL,
-        OR,
-        PRINT,
-        RETURN,
-        SUPER,
-        THIS,
-        TRUE,
-        VAR,
-        WHILE,
-
-        EOF,
-    }
-    pub struct Token<T> {
-        ttype: TokenType,
+impl Token {
+    pub fn new_token(
+        ttype: token_type::TokenType,
         lexeme: String,
-        literal: Option<T>,
+        literal: Option<String>,
         line: i32,
+    ) -> Token {
+        Token {
+            ttype,
+            lexeme,
+            literal,
+            line,
+        }
     }
 
-    impl<T> Token<T> {
-        pub fn token(ttype: TokenType, lexeme: String, literal: Option<T>, line: i32) -> Token<T> {
-            Token {
-                ttype,
-                lexeme,
-                literal,
-                line,
-            }
-        }
-
-        pub fn to_string(&self) -> String {
-            // let loc_type = self.ttype;
-            // let lexeme = self.lexeme;
-            // let literal = self.literal;
-            // format!("{loc_type} {lexeme} {literal}")
-            return "".to_string();
-        }
+    pub fn to_string(&self) -> String {
+        // let loc_type = self.ttype;
+        // let lexeme = self.lexeme;
+        // let literal = self.literal;
+        // format!("{loc_type} {lexeme} {literal}")
+        return "".to_string();
     }
 }
