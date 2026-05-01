@@ -8,6 +8,7 @@ use std::io::stdout;
 use std::process;
 
 use crate::scanner::Scanner;
+// use crate::scanner::token::Token;
 
 mod scanner;
 
@@ -73,7 +74,7 @@ impl Lox {
     fn run(&mut self, input: String) {
         println!("{}", input);
         let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
-        // Vec<Token> = scanner.
+        let tokens = scanner.scan_tokens();
     }
 
     pub fn error(&mut self, line: i32, message: String) {

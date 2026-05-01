@@ -1,5 +1,3 @@
-use std::str::Chars;
-
 #[path = "./token.rs"]
 mod token;
 use crate::Lox;
@@ -75,6 +73,20 @@ impl<'a> Scanner<'a> {
             } else {
                 TokenType::GREATER
             }),
+            "/" => {
+                if self.match_next("/") {
+                    while self.peek() != "\n" && !self.is_at_end() {
+                        self.current += 1;
+                    }
+                } else {
+                    self.add_token(TokenType::SLASH);
+                }
+            }
+            " " => (),
+            "/r" => (),
+            "/t" => (),
+            "/n" => self.line += 1,
+            "\"" => self.string(),
             _ => self
                 .lox
                 .error(self.line, "Unexpected character".to_string()), // To Do
@@ -107,6 +119,7 @@ impl<'a> Scanner<'a> {
         &self.source[start..end]
     }
 
+    //
     fn match_next(&self, expected: &str) -> bool {
         if self.is_at_end() {
             return false;
@@ -116,8 +129,38 @@ impl<'a> Scanner<'a> {
         if &self.source[start..end] != expected {
             false
         } else {
-            // self.current += 1;
             true
         }
+    }
+
+    fn peek(&self) -> &str {
+        if self.is_at_end() {
+            "\0"
+        } else {
+            let start: usize = self.current as usize;
+            let end: usize = start + 1;
+            &self.source[start..end]
+        }
+    }
+
+    fn string(&mut self) {
+        // ToDO
+        while self.peek() != "\"" && !self.is_at_end() {
+            if self.peek() == "\n" {
+                self.line += 1
+            }
+            self.advance();
+        }
+        if self.is_at_end() {
+            self.lox.error(self.line, "Unterminated String".to_string());
+        }
+        // closing "
+        self.advance();
+
+        // Trim surounding quotes
+        let start: usize = self.start as usize + 1;
+        let end: usize = self.current as usize - 1;
+        let value: String = self.source[start..end].to_string();
+        self.add_token(TokenType::STRING(value));
     }
 }
