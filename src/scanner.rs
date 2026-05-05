@@ -1,5 +1,6 @@
 #[path = "./token.rs"]
 mod token;
+
 use crate::Lox;
 use token::Token;
 use token::token_type::TokenType;
@@ -87,9 +88,16 @@ impl<'a> Scanner<'a> {
             "/t" => (),
             "/n" => self.line += 1,
             "\"" => self.string(),
-            _ => self
-                .lox
-                .error(self.line, "Unexpected character".to_string()), // To Do
+            _ => {
+                if is_digit(c) {
+                    self.number();
+                } else if is_alpha(c) {
+                    //
+                } else {
+                    self.lox
+                        .error(self.line, "Unexpected character".to_string())
+                }
+            } // To Do
         }
         if double {
             self.current += 1;
@@ -163,4 +171,48 @@ impl<'a> Scanner<'a> {
         let value: String = self.source[start..end].to_string();
         self.add_token(TokenType::STRING(value));
     }
+
+    fn number(&mut self) {
+        while is_digit(self.peek()) {
+            self.advance();
+        }
+        if self.peek() == "." && is_digit(self.peek_next()) {
+            self.advance();
+            while is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+        let start: usize = self.start as usize;
+        let end: usize = self.current as usize;
+        let num: f64 = self.source[start..end].parse().unwrap();
+        self.add_token(TokenType::NUMBER(num));
+    }
+
+    fn peek_next(&self) -> &str {
+        if self.current + 1 >= self.source.len() as i32 {
+            return "\\0";
+        }
+        let start: usize = self.start as usize + 1;
+        let end: usize = start + 1;
+        &self.source[start..end]
+    }
+
+    fn identifer(&self) {
+        while is_alphanumeric(self.peek()) {
+            self.advance();
+        }
+        self.add_token(TokenType::IDENTIFIER(()));
+    }
+}
+
+fn is_digit(c: &str) -> bool {
+    c.chars().all(char::is_numeric)
+}
+
+fn is_alpha(c: &str) -> bool {
+    c.chars().all(char::is_alphabetic)
+}
+
+fn is_alphanumeric(c: &str) -> bool {
+    c.chars().all(char::is_alphanumeric)
 }

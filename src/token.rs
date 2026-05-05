@@ -3,7 +3,6 @@ pub mod object_type;
 #[path = "token/token_type.rs"]
 pub mod token_type;
 
-use object_type::ObjectType;
 use token_type::TokenType;
 
 #[derive(Clone)]
