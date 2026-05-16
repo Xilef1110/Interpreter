@@ -192,7 +192,7 @@ impl<'a> Scanner<'a> {
         if self.current + 1 >= self.source.len() as i32 {
             return "\\0";
         }
-        let start: usize = self.start as usize + 1;
+        let start: usize = self.current as usize + 1;
         let end: usize = start + 1;
         &self.source[start..end]
     }
@@ -306,13 +306,16 @@ mod tests {
         let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
         assert!(scan.match_next("t"));
         assert_eq!("t", scan.peek());
+        assert_eq!("e", scan.peek_next());
         assert_eq!("t", scan.advance());
         assert_eq!("e", scan.peek());
+        assert_eq!("s", scan.peek_next());
         assert!(scan.match_next("e"));
         assert_eq!("e", scan.advance());
         assert_eq!(scan.current, 2);
         assert_eq!("s", scan.peek());
         scan.advance();
+        assert_eq!("\\0", scan.peek_next());
         assert_eq!(3, scan.current);
         assert_eq!("t", scan.advance());
         assert!(!scan.match_next("a"));
@@ -320,7 +323,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_string() {
+    fn test_string() {
         let mut t_lox = Lox { had_error: false };
         let mut scan: Scanner = Scanner::new_scanner("\"test\"".to_string(), &mut t_lox);
         scan.current += 1;
@@ -332,5 +335,45 @@ mod tests {
         });
         assert_eq!(0, scan.start);
         assert_eq!(6, scan.current);
+    }
+
+    #[test]
+    fn test_number() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
+        scan.current += 1;
+        scan.number();
+        let value: f64 = 1234 as f64;
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::NUMBER(value) => true,
+            _ => false,
+        });
+        assert_eq!(0, scan.start);
+        assert_eq!(4, scan.current);
+    }
+
+    #[test]
+    fn test_identifier() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
+        scan.identifer();
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::IDENTIFIER => true,
+            _ => false,
+        });
+        assert_eq!(0, scan.start);
+        assert_eq!(4, scan.current);
+        let mut scan: Scanner = Scanner::new_scanner("and".to_string(), &mut t_lox);
+        scan.identifer();
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::AND => true,
+            _ => false,
+        });
+        let mut scan: Scanner = Scanner::new_scanner("return".to_string(), &mut t_lox);
+        scan.identifer();
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::RETURN => true,
+            _ => false,
+        });
     }
 }
