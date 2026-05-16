@@ -197,22 +197,69 @@ impl<'a> Scanner<'a> {
         &self.source[start..end]
     }
 
-    fn identifer(&self) {
+    fn identifer(&mut self) {
         while is_alphanumeric(self.peek()) {
             self.advance();
         }
-        self.add_token(TokenType::IDENTIFIER(()));
+        self.add_token(TokenType::IDENTIFIER);
     }
 }
 
 fn is_digit(c: &str) -> bool {
+    if c.is_empty() {
+        return false;
+    }
     c.chars().all(char::is_numeric)
 }
 
 fn is_alpha(c: &str) -> bool {
+    if c.is_empty() {
+        return false;
+    }
     c.chars().all(char::is_alphabetic)
 }
 
 fn is_alphanumeric(c: &str) -> bool {
+    if c.is_empty() {
+        return false;
+    }
     c.chars().all(char::is_alphanumeric)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_digit() {
+        assert!(is_digit("1"));
+        assert!(is_digit("10"));
+        assert!(is_digit("0123456789"));
+        assert!(!is_digit("a"));
+        assert!(!is_digit("1b"));
+        assert!(!is_digit("1z34"));
+        assert!(!is_digit(""));
+    }
+
+    #[test]
+    fn test_is_alpha() {
+        assert!(is_alpha("l"));
+        assert!(is_alpha("rr"));
+        assert!(is_alpha("abcdelmnopq"));
+        assert!(!is_alpha("1"));
+        assert!(!is_alpha("1b"));
+        assert!(!is_alpha("az3m"));
+        assert!(!is_alpha(""));
+    }
+
+    #[test]
+    fn test_is_alphanumeric() {
+        assert!(is_alphanumeric("l"));
+        assert!(is_alphanumeric("rr"));
+        assert!(is_alphanumeric("1"));
+        assert!(is_alphanumeric("1"));
+        assert!(is_alphanumeric("1b"));
+        assert!(is_alphanumeric("az3m"));
+        assert!(!is_alphanumeric(""));
+    }
 }

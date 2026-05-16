@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "Python-Interpretor"
+name = "interp"
 version = "0.0.1"

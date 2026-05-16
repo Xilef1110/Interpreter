@@ -1,9 +1,18 @@
 [package]
-name = "Python-Interpretor"
+name = "interp"
 version = "0.0.1"
 authors = ["Felix Stock <felix@stockfamily.at>"]
 edition = "2024"
 description = "A rudimentary Interpretor for python written in Rust"
+
+[[bin]]
+name = "interp"
+path = "src/main.rs"
+
+[lib]
+name = "interp"
+path = "src/main.rs"
+
 
 [dependencies]
 # Lists packages needed to compile and run the package's code

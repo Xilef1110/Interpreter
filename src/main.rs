@@ -1,7 +1,5 @@
 // use std::os::unix::fs;
 
-// include!("scanner.rs");
-
 use std::io::Write;
 use std::io::stdin;
 use std::io::stdout;
@@ -10,7 +8,7 @@ use std::process;
 use crate::scanner::Scanner;
 // use crate::scanner::token::Token;
 
-mod scanner;
+pub mod scanner;
 
 struct Lox {
     had_error: bool,
