@@ -28,6 +28,10 @@ impl Token {
         // format!("{loc_type} {lexeme} {literal}")
         return "".to_string();
     }
+
+    pub fn get_type(&self) -> TokenType {
+        self.ttype.clone()
+    }
 }
 
 // impl Clone for Token {

@@ -36,7 +36,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn scan_token(&mut self) {
+    pub fn scan_token(&mut self) {
         let c: &str = self.advance();
         let mut double = false;
         match c {
@@ -240,7 +240,6 @@ mod tests {
         assert!(!is_digit("1z34"));
         assert!(!is_digit(""));
     }
-
     #[test]
     fn test_is_alpha() {
         assert!(is_alpha("l"));
@@ -251,7 +250,6 @@ mod tests {
         assert!(!is_alpha("az3m"));
         assert!(!is_alpha(""));
     }
-
     #[test]
     fn test_is_alphanumeric() {
         assert!(is_alphanumeric("l"));
@@ -261,5 +259,78 @@ mod tests {
         assert!(is_alphanumeric("1b"));
         assert!(is_alphanumeric("az3m"));
         assert!(!is_alphanumeric(""));
+    }
+
+    #[test]
+    fn test_constructor() {
+        let mut t_lox = Lox { had_error: false };
+        let scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
+        assert_eq!("test".to_string(), scan.source);
+        assert_eq!(0, scan.start);
+        assert_eq!(0, scan.current);
+        assert_eq!(false, scan.lox.had_error);
+        assert_eq!(0, scan.tokens.len());
+    }
+
+    #[test]
+    fn test_is_at_end() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
+        assert!(!scan.is_at_end());
+        scan.current += 3;
+        assert!(!scan.is_at_end());
+        scan.current += 1;
+        assert!(scan.is_at_end());
+    }
+
+    #[test]
+    fn test_add_token() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
+        scan.add_token(TokenType::AND);
+        scan.add_token(TokenType::BANG);
+        assert_eq!(2, scan.tokens.len());
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::AND => true,
+            _ => false,
+        });
+        assert!(match scan.tokens[1].get_type() {
+            TokenType::BANG => true,
+            _ => false,
+        });
+    }
+
+    #[test]
+    fn test_advance_and_check_functions() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
+        assert!(scan.match_next("t"));
+        assert_eq!("t", scan.peek());
+        assert_eq!("t", scan.advance());
+        assert_eq!("e", scan.peek());
+        assert!(scan.match_next("e"));
+        assert_eq!("e", scan.advance());
+        assert_eq!(scan.current, 2);
+        assert_eq!("s", scan.peek());
+        scan.advance();
+        assert_eq!(3, scan.current);
+        assert_eq!("t", scan.advance());
+        assert!(!scan.match_next("a"));
+        assert_eq!("\0", scan.peek());
+    }
+
+    #[test]
+    fn test_add_string() {
+        let mut t_lox = Lox { had_error: false };
+        let mut scan: Scanner = Scanner::new_scanner("\"test\"".to_string(), &mut t_lox);
+        scan.current += 1;
+        scan.string();
+        let value = "test".to_string();
+        assert!(match scan.tokens[0].get_type() {
+            TokenType::STRING(value) => true,
+            _ => false,
+        });
+        assert_eq!(0, scan.start);
+        assert_eq!(6, scan.current);
     }
 }
