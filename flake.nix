@@ -7,10 +7,14 @@
   };
 
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      naersk,
+    }:
     let
       pkgs = nixpkgs.legacyPackages."x86_64-linux";
-      naerskLib = pkgs.callPackage.naersk { };
+      naerskLib = pkgs.callPackage naersk { };
     in
     {
       packages."x86.64-linux".default = naerskLib.buildPackage {
