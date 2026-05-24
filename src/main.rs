@@ -62,6 +62,9 @@ impl Lox {
         println!("{}", input);
         let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
         let tokens = scanner.scan_tokens();
+        for tok in tokens.into_iter() {
+            println!("{}", tok.to_string());
+        }
     }
 
     pub fn error(&mut self, line: i32, message: String) {
