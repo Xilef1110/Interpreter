@@ -4,7 +4,6 @@ mod keywords;
 mod token;
 
 use crate::Lox;
-use std::collections::HashMap;
 use token::Token;
 use token::token_type::TokenType;
 
@@ -333,9 +332,9 @@ mod tests {
         let mut scan: Scanner = Scanner::new_scanner("\"test\"".to_string(), &mut t_lox);
         scan.current += 1;
         scan.string();
-        let value = "test".to_string();
+        let _value = "test".to_string();
         assert!(match scan.tokens[0].get_type() {
-            TokenType::STRING(value) => true,
+            TokenType::STRING(_value) => true,
             _ => false,
         });
         assert_eq!(0, scan.start);
@@ -348,9 +347,9 @@ mod tests {
         let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
         scan.current += 1;
         scan.number();
-        let value: f64 = 1234 as f64;
+        let _value: f64 = 1234 as f64;
         assert!(match scan.tokens[0].get_type() {
-            TokenType::NUMBER(value) => true,
+            TokenType::NUMBER(_value) => true,
             _ => false,
         });
         assert_eq!(0, scan.start);
