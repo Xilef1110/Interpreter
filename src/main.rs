@@ -10,7 +10,7 @@ use crate::scanner::Scanner;
 
 pub mod scanner;
 
-struct Lox {
+pub struct Lox {
     had_error: bool,
 }
 

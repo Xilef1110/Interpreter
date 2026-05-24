@@ -1,7 +1,10 @@
+#[path = "./keywords.rs"]
+mod keywords;
 #[path = "./token.rs"]
 mod token;
 
 use crate::Lox;
+use std::collections::HashMap;
 use token::Token;
 use token::token_type::TokenType;
 
@@ -12,6 +15,7 @@ pub struct Scanner<'a> {
     current: i32,
     line: i32,
     lox: &'a mut Lox,
+    keywords: Box<HashMap<String, TokenType>>,
 }
 
 impl<'a> Scanner<'a> {
@@ -33,6 +37,7 @@ impl<'a> Scanner<'a> {
             current: 0,
             line: 1,
             lox,
+            keywords: keywords::gen_keywords(),
         }
     }
 
@@ -197,7 +202,7 @@ impl<'a> Scanner<'a> {
         &self.source[start..end]
     }
 
-    fn identifer(&mut self) {
+    fn identifier(&mut self) {
         while is_alphanumeric(self.peek()) {
             self.advance();
         }
@@ -356,7 +361,7 @@ mod tests {
     fn test_identifier() {
         let mut t_lox = Lox { had_error: false };
         let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
-        scan.identifer();
+        scan.identifier();
         assert!(match scan.tokens[0].get_type() {
             TokenType::IDENTIFIER => true,
             _ => false,
@@ -364,13 +369,13 @@ mod tests {
         assert_eq!(0, scan.start);
         assert_eq!(4, scan.current);
         let mut scan: Scanner = Scanner::new_scanner("and".to_string(), &mut t_lox);
-        scan.identifer();
+        scan.identifier();
         assert!(match scan.tokens[0].get_type() {
             TokenType::AND => true,
             _ => false,
         });
         let mut scan: Scanner = Scanner::new_scanner("return".to_string(), &mut t_lox);
-        scan.identifer();
+        scan.identifier();
         assert!(match scan.tokens[0].get_type() {
             TokenType::RETURN => true,
             _ => false,
