@@ -15,7 +15,6 @@ pub struct Scanner<'a> {
     current: i32,
     line: i32,
     lox: &'a mut Lox,
-    keywords: Box<HashMap<String, TokenType>>,
 }
 
 impl<'a> Scanner<'a> {
@@ -37,7 +36,6 @@ impl<'a> Scanner<'a> {
             current: 0,
             line: 1,
             lox,
-            keywords: keywords::gen_keywords(),
         }
     }
 
@@ -97,12 +95,12 @@ impl<'a> Scanner<'a> {
                 if is_digit(c) {
                     self.number();
                 } else if is_alpha(c) {
-                    //
+                    self.identifier();
                 } else {
                     self.lox
                         .error(self.line, "Unexpected character".to_string())
                 }
-            } // To Do
+            }
         }
         if double {
             self.current += 1;
@@ -157,7 +155,6 @@ impl<'a> Scanner<'a> {
     }
 
     fn string(&mut self) {
-        // ToDO
         while self.peek() != "\"" && !self.is_at_end() {
             if self.peek() == "\n" {
                 self.line += 1
@@ -206,7 +203,10 @@ impl<'a> Scanner<'a> {
         while is_alphanumeric(self.peek()) {
             self.advance();
         }
-        self.add_token(TokenType::IDENTIFIER);
+        let start: usize = self.start as usize;
+        let end: usize = self.current as usize;
+        let text = &self.source[start..end];
+        self.add_token(keywords::get_keyword(text));
     }
 }
 
