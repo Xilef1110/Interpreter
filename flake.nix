@@ -13,16 +13,16 @@
       naersk,
     }:
     let
-      pkgs = nixpkgs.legacyPackages."x86.64-linux";
+      pkgs = nixpkgs.legacyPackages."x86_64-linux";
       naerskLib = pkgs.callPackage naersk { };
     in
     {
-      packages."x86.64-linux".default = naerskLib.buildPackage {
+      packages."x86_64-linux".default = naerskLib.buildPackage {
         src = ./.;
         buildInputs = [ ];
         nativeBuildInputs = [ pkgs.pkg-config ];
       };
-      devShells."x86.64-linux".default = pkgs.mkShell {
+      devShells."x86_64-linux".default = pkgs.mkShell {
         buildInputs = with pkgs; [
           cargo
           rustc
