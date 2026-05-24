@@ -22,10 +22,10 @@ impl Token {
     }
 
     pub fn to_string(&self) -> String {
-        // let loc_type = self.ttype;
-        // let lexeme = self.lexeme;
-        // let literal = self.literal;
-        // format!("{loc_type} {lexeme} {literal}")
+        let loc_type = self.ttype.clone();
+        let lexeme = self.lexeme.clone();
+        let literal = self.line;
+        format!("{loc_type} {lexeme} {literal}");
         return "".to_string();
     }
 

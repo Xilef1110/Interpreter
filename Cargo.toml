@@ -16,6 +16,8 @@ path = "src/main.rs"
 
 [dependencies]
 # Lists packages needed to compile and run the package's code
+strum = "0.28"
+strum_macros = "0.28"
 
 
 [dev-dependencies]
