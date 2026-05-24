@@ -14,20 +14,9 @@ pub struct Lox {
     had_error: bool,
 }
 
-// pub trait ErrorHandling {
-//     fn error(&mut self, line: i32, message: String);
-//     fn report(&mut self, line: i32, loc: String, message: String);
-// }
-
-// pub trait Run {
-//     fn run_file(&mut self, filepath: String);
-//     fn run_prompt(&mut self);
-//     fn run(&mut self, input: String);
-// }
-
 fn main() {
     let arglength = std::env::args().len();
-    let mut interp = Lox { had_error: true };
+    let mut interp = Lox { had_error: false };
     if arglength > 1 {
         print!("To many arguments");
         process::exit(63);
@@ -79,7 +68,6 @@ impl Lox {
         self.report(line, "".to_string(), message);
     }
 
-    // TODO: figure out how to make this private
     fn report(&mut self, line: i32, loc: String, message: String) {
         println!("[line {} ] Error {}: {}", line, loc, message);
         self.had_error = true;
