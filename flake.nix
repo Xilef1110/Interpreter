@@ -22,7 +22,7 @@
         buildInputs = [ ];
         nativeBuildInputs = [ pkgs.pkg-config ];
       };
-      devShells."x86_64-linux".default = pkgs.mkShell {
+      devShells."x86.64-linux".default = pkgs.mkShell {
         buildInputs = with pkgs; [
           cargo
           rustc
