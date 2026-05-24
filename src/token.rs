@@ -25,8 +25,7 @@ impl Token {
         let loc_type = self.ttype.clone();
         let lexeme = self.lexeme.clone();
         let literal = self.line;
-        format!("{loc_type} {lexeme} {literal}");
-        return "".to_string();
+        format!("{loc_type} {lexeme} {literal}")
     }
 
     pub fn get_type(&self) -> TokenType {
