@@ -13,7 +13,7 @@
       naersk,
     }:
     let
-      pkgs = nixpkgs.legacyPackages."x86_64-linux";
+      pkgs = nixpkgs.legacyPackages."x86.64-linux";
       naerskLib = pkgs.callPackage naersk { };
     in
     {
