@@ -1,5 +1,3 @@
-#[path = "token/object_type.rs"]
-pub mod object_type;
 #[path = "token/token_type.rs"]
 pub mod token_type;
 
