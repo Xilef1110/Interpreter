@@ -17,10 +17,10 @@ pub struct Lox {
 fn main() {
     let arglength = std::env::args().len();
     let mut interp = Lox { had_error: false };
-    if arglength > 1 {
+    if arglength > 2 {
         print!("To many arguments");
         process::exit(63);
-    } else if arglength == 1 {
+    } else if arglength == 2 {
         interp.run_file(std::env::args().nth(0).expect("no file given"));
     } else {
         interp.run_prompt();
