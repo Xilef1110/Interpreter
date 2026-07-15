@@ -5,7 +5,7 @@ mod token;
 
 use crate::Lox;
 use token::Token;
-use token::token_type::TokenType;
+pub use token::token_type::TokenType;
 
 pub struct Scanner<'a> {
     source: String,
