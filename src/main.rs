@@ -8,6 +8,7 @@ use std::process;
 use crate::scanner::Scanner;
 // use crate::scanner::token::Token;
 
+pub mod expr;
 pub mod scanner;
 
 pub struct Lox {

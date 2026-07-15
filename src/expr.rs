@@ -31,3 +31,15 @@ pub fn printExpr(expr: Expr) -> String {
         _ => {}
     }
 }
+
+// Tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn testPrintLiteral() {
+        let lit: Expr = Literal(TokenType::NUMBER(3));
+        assert_eq!("3".to_string, printExpr(lit));
+    }
+}
