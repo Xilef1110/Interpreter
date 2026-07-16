@@ -29,12 +29,11 @@ pub fn print_expr(expr_p: Box<Expr>) -> String {
         } => {
             let left: String = print_expr(left);
             let right: String = print_expr(right);
-            format!("{left} {operator} {right}")
+            let op: String = TokenType::as_string(operator);
+            format!("{left} {op} {right}")
         }
-        Expr::Literal { value } => {
-            format!("{value} ")
-        }
-        _ => "".to_string(),
+        Expr::Literal { value } => TokenType::as_string(value),
+        _ => "Error".to_string(),
     }
 }
 
@@ -48,6 +47,6 @@ mod tests {
         let lit: Box<Expr> = Box::new(Expr::Literal {
             value: TokenType::NUMBER(3 as f64),
         });
-        assert_eq!("3".to_string(), print_expr(lit));
+        assert_eq!("Number: 3".to_string(), print_expr(lit));
     }
 }

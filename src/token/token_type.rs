@@ -48,14 +48,15 @@ pub enum TokenType {
 
     EOF,
 }
-
-pub fn to_string(tok: TokenType) -> String {
-    match tok {
-        TokenType::STRING(str) => {
-            let nstr = str.clone();
-            format!("String: {nstr}")
+impl TokenType {
+    pub fn as_string(tok: TokenType) -> String {
+        match tok {
+            TokenType::STRING(str) => {
+                let nstr = str.clone();
+                format!("String: {nstr}")
+            }
+            TokenType::NUMBER(num) => format!("Number: {num}"),
+            _ => format!("{tok}"),
         }
-        TokenType::NUMBER(num) => format!("Number: {num}"),
-        _ => format!("{tok}"),
     }
 }
