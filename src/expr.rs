@@ -8,7 +8,7 @@ pub enum Expr {
     },
     Call,
     Get,
-    Grouping,
+    Grouping(Box<Expr>),
     Literal {
         value: TokenType,
     },
@@ -16,7 +16,10 @@ pub enum Expr {
     Set,
     Super,
     This,
-    Unary,
+    Unary {
+        operator: TokenType,
+        right: Box<Expr>,
+    },
     Variable,
 }
 
@@ -32,7 +35,13 @@ pub fn print_expr(expr_p: Box<Expr>) -> String {
             let op: String = TokenType::as_string(operator);
             format!("({left} {op} {right})")
         }
+        Expr::Grouping(expr) => print_expr(expr),
         Expr::Literal { value } => TokenType::as_string(value),
+        Expr::Unary { operator, right } => {
+            let right: String = print_expr(right);
+            let op: String = TokenType::as_string(operator);
+            format!("{op} {right}")
+        }
         _ => "Error".to_string(),
     }
 }
