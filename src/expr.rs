@@ -51,18 +51,45 @@ mod tests {
     }
     #[test]
     fn test_print_binary() {
-        let left: Box<Expr> = Box::new(Expr::Literal {
+        let six: Box<Expr> = Box::new(Expr::Literal {
             value: TokenType::NUMBER(6 as f64),
         });
-        let right: Box<Expr> = Box::new(Expr::Literal {
+        let seven: Box<Expr> = Box::new(Expr::Literal {
             value: TokenType::NUMBER(7 as f64),
         });
         let operator: TokenType = TokenType::PLUS;
         let bin: Box<Expr> = Box::new(Expr::Binary {
-            left: left,
+            left: six,
             operator: operator,
-            right: right,
+            right: seven,
         });
         assert_eq!("(Number:6 PLUS Number:7)".to_string(), print_expr(bin));
+    }
+    #[test]
+    fn test_print_bin_multiple() {
+        let six: Box<Expr> = Box::new(Expr::Literal {
+            value: TokenType::NUMBER(6 as f64),
+        });
+        let seven: Box<Expr> = Box::new(Expr::Literal {
+            value: TokenType::NUMBER(7 as f64),
+        });
+        let five: Box<Expr> = Box::new(Expr::Literal {
+            value: TokenType::NUMBER(5 as f64),
+        });
+        let operator: TokenType = TokenType::PLUS;
+        let bin: Box<Expr> = Box::new(Expr::Binary {
+            left: six,
+            operator: operator,
+            right: seven,
+        });
+        let outbin: Box<Expr> = Box::new(Expr::Binary {
+            left: bin,
+            operator: TokenType::STAR,
+            right: five,
+        });
+        assert_eq!(
+            "((Number:6 PLUS Number:7) STAR Number:5))".to_string(),
+            print_expr(outbin)
+        );
     }
 }
