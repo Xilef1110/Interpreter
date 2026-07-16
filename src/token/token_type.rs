@@ -53,9 +53,9 @@ impl TokenType {
         match tok {
             TokenType::STRING(str) => {
                 let nstr = str.clone();
-                format!("String: {nstr}")
+                format!("String:{nstr}")
             }
-            TokenType::NUMBER(num) => format!("Number: {num}"),
+            TokenType::NUMBER(num) => format!("Number:{num}"),
             _ => format!("{tok}"),
         }
     }

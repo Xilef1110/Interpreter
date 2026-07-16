@@ -30,7 +30,7 @@ pub fn print_expr(expr_p: Box<Expr>) -> String {
             let left: String = print_expr(left);
             let right: String = print_expr(right);
             let op: String = TokenType::as_string(operator);
-            format!("{left} {op} {right}")
+            format!("({left} {op} {right})")
         }
         Expr::Literal { value } => TokenType::as_string(value),
         _ => "Error".to_string(),
@@ -47,6 +47,22 @@ mod tests {
         let lit: Box<Expr> = Box::new(Expr::Literal {
             value: TokenType::NUMBER(3 as f64),
         });
-        assert_eq!("Number: 3".to_string(), print_expr(lit));
+        assert_eq!("Number:3".to_string(), print_expr(lit));
+    }
+    #[test]
+    fn test_print_binary() {
+        let left: Box<Expr> = Box::new(Expr::Literal {
+            value: TokenType::NUMBER(6 as f64),
+        });
+        let right: Box<Expr> = Box::new(Expr::Literal {
+            value: TokenType::NUMBER(7 as f64),
+        });
+        let operator: TokenType = TokenType::PLUS;
+        let bin: Box<Expr> = Box::new(Expr::Binary {
+            left: left,
+            operator: operator,
+            right: right,
+        });
+        assert_eq!("(Number:6 PLUS Number:7)".to_string(), print_expr(bin));
     }
 }
