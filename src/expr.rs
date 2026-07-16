@@ -32,7 +32,7 @@ pub fn print_expr(expr_p: Box<Expr>) -> String {
             format!("{left} {operator} {right}")
         }
         Expr::Literal { value } => {
-            format!(" {value} ")
+            format!("{value} ")
         }
         _ => "".to_string(),
     }
