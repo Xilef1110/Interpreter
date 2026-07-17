@@ -9,6 +9,7 @@ use crate::scanner::Scanner;
 // use crate::scanner::token::Token;
 
 pub mod expr;
+mod parser;
 pub mod scanner;
 
 pub struct Lox {

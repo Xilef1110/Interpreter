@@ -1,7 +1,7 @@
 #[path = "./keywords.rs"]
 mod keywords;
 #[path = "./token.rs"]
-mod token;
+pub mod token;
 
 use crate::Lox;
 use token::Token;
