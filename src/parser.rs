@@ -7,15 +7,35 @@ struct Parser {
     tokens: Vec<Token>,
     current: i32,
 }
+/* Parser
+    As part of parsing, the Token is converted to TokenType
+*/
 
 impl Parser {
     pub fn new_parser(tokens: Vec<Token>) -> Parser {
         Parser { tokens, current: 0 }
     }
 
-    // Recursive Descent Functions
+    /*
+     Recursive Descent Functions
+    */
+
     fn expression(&self) -> Expr {
-        Expr::Assign
+        self.equality()
+    }
+
+    fn equality(&self) -> Expr {
+        let mut expr = self.comparison();
+        while (self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual])) {
+            let operator: TokenType = self.previous();
+            let right = self.comparison();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: operator,
+                right: Box::new(right),
+            }
+        }
+        expr
     }
 
     fn comparison(&self) -> Expr {
@@ -51,10 +71,10 @@ impl Parser {
     fn is_at_end(&self) -> bool {
         false
     }
-    fn peek(&self) -> Token {
-        Token::new_token(TokenType::DOT, "".to_string(), 0)
+    fn peek(&self) -> TokenType {
+        TokenType::DOT
     }
-    fn previous(&self) -> Token {
-        Token::new_token(TokenType::DOT, "".to_string(), 0)
+    fn previous(&self) -> TokenType {
+        TokenType::DOT
     }
 }
