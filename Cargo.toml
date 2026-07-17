@@ -9,9 +9,9 @@ description = "A rudimentary Interpretor for python written in Rust"
 name = "interp"
 path = "src/main.rs"
 
-[lib]
-name = "interp"
-path = "src/main.rs"
+# [lib]
+# name = "interp"
+# path = "src/main.rs"
 
 
 [dependencies]
