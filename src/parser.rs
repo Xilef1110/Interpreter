@@ -20,11 +20,11 @@ impl Parser {
      Recursive Descent Methods
     */
 
-    fn expression(&self) -> Expr {
+    fn expression(&mut self) -> Expr {
         self.equality()
     }
 
-    fn equality(&self) -> Expr {
+    fn equality(&mut self) -> Expr {
         let mut expr = self.comparison();
         while (self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual])) {
             let operator: TokenType = self.previous();
@@ -59,7 +59,7 @@ impl Parser {
     }
 
     // Descent helpers
-    fn match_types(&self, types: Vec<TokenType>) -> bool {
+    fn match_types(&mut self, types: Vec<TokenType>) -> bool {
         for ty in types {
             if (self.check(ty)) {
                 self.advance();
@@ -74,17 +74,24 @@ impl Parser {
         }
         ttype == self.peek()
     }
-    fn advance(&self) -> Token {
-        Token::new_token(TokenType::DOT, "".to_string(), 0)
+    fn advance(&mut self) -> TokenType {
+        if !self.is_at_end() {
+            self.current += 1
+        }
+        self.previous()
     }
     fn is_at_end(&self) -> bool {
-        false
+        self.peek() == TokenType::EOF
     }
     fn peek(&self) -> TokenType {
-        TokenType::DOT
+        let i: usize = self.current as usize;
+        let tok = self.tokens[i].clone();
+        tok.get_type()
     }
     fn previous(&self) -> TokenType {
-        TokenType::DOT
+        let i: usize = (self.current - 1) as usize;
+        let tok = self.tokens[i].clone();
+        tok.get_type()
     }
 }
 
