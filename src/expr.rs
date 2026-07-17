@@ -97,7 +97,7 @@ mod tests {
             right: five,
         });
         assert_eq!(
-            "((Number:6 PLUS Number:7) STAR Number:5))".to_string(),
+            "((Number:6 PLUS Number:7) STAR Number:5)".to_string(),
             print_expr(outbin)
         );
     }
