@@ -1,16 +1,19 @@
 use crate::{
     expr::Expr,
-    scanner::{TokenType, token::Token},
+    scanner::{
+        TokenType::{self, FALSE},
+        token::Token,
+    },
 };
 
 struct Parser {
     tokens: Vec<Token>,
     current: i32,
 }
+
 /* Parser
     As part of parsing, the Token is converted to TokenType
 */
-
 impl Parser {
     pub fn new_parser(tokens: Vec<Token>) -> Parser {
         Parser { tokens, current: 0 }
@@ -38,24 +41,74 @@ impl Parser {
         expr
     }
 
-    fn comparison(&self) -> Expr {
-        Expr::Assign
+    fn comparison(&mut self) -> Expr {
+        let mut expr = self.term();
+        while self.match_types(vec![
+            TokenType::GREATER,
+            TokenType::GreaterEqual,
+            TokenType::LESS,
+            TokenType::LessEqual,
+        ]) {
+            let operator = self.previous();
+            let right = self.term();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+        expr
     }
 
-    fn term(&self) -> Expr {
-        Expr::Assign
+    fn term(&mut self) -> Expr {
+        let mut expr = self.factor();
+        while self.match_types(vec![TokenType::PLUS, TokenType::MINUS]) {
+            let operator = self.previous();
+            let right = self.factor();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+        expr
     }
 
-    fn factor(&self) -> Expr {
-        Expr::Assign
+    fn factor(&mut self) -> Expr {
+        let mut expr = self.unary();
+        while self.match_types(vec![TokenType::SLASH, TokenType::STAR]) {
+            let operator = self.previous();
+            let right = self.unary();
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            }
+        }
+        expr
     }
 
-    fn unary(&self) -> Expr {
-        Expr::Assign
+    fn unary(&mut self) -> Expr {
+        if self.match_types(vec![TokenType::BANG, TokenType::MINUS]) {
+            let operator = self.previous();
+            let right = self.unary();
+            return Expr::Unary {
+                operator,
+                right: Box::new(right),
+            };
+        }
+        self.primary()
     }
 
-    fn primary(&self) -> Expr {
-        Expr::Assign
+    fn primary(&mut self) -> Expr {
+        let next = self.advance();
+        match next {
+            TokenType::LeftParen => {
+                // ToDo!!!
+                panic!("Did not implement Parens");
+            }
+            _ => return Expr::Literal { value: next },
+        }
     }
 
     // Descent helpers
@@ -92,6 +145,9 @@ impl Parser {
         let i: usize = (self.current - 1) as usize;
         let tok = self.tokens[i].clone();
         tok.get_type()
+    }
+    fn consume(self, ttype: TokenType, message: String) -> TokenType {
+        TokenType::RightParen
     }
 }
 
