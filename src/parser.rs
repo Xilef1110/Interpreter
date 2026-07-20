@@ -147,8 +147,11 @@ impl Parser {
         let tok = self.tokens[i].clone();
         tok.get_type()
     }
-    fn consume(&self, ttype: TokenType, message: &str) -> TokenType {
-        TokenType::RightParen
+    fn consume(&mut self, ttype: TokenType, message: &str) -> TokenType {
+        if self.check(ttype) {
+            return self.advance();
+        }
+        panic!("{}", message);
     }
 }
 
