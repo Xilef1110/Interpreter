@@ -22,7 +22,6 @@ impl Parser {
     /*
      Recursive Descent Methods
     */
-
     fn expression(&mut self) -> Expr {
         self.equality()
     }
@@ -105,7 +104,9 @@ impl Parser {
         match next {
             TokenType::LeftParen => {
                 // ToDo!!!
-                panic!("Did not implement Parens");
+                let expr = self.expression();
+                self.consume(TokenType::RightParen, "Expect ')' after expression.");
+                return Expr::Grouping(Box::new(expr));
             }
             _ => return Expr::Literal { value: next },
         }
@@ -146,7 +147,7 @@ impl Parser {
         let tok = self.tokens[i].clone();
         tok.get_type()
     }
-    fn consume(self, ttype: TokenType, message: String) -> TokenType {
+    fn consume(&self, ttype: TokenType, message: &str) -> TokenType {
         TokenType::RightParen
     }
 }
