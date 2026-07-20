@@ -1,47 +1,54 @@
 use crate::{
+    Lox,
     expr::Expr,
     scanner::{
         TokenType::{self, FALSE},
         token::Token,
     },
 };
+use anyhow::{Error, Result, anyhow};
 
-struct Parser {
+struct Parser<'a> {
     tokens: Vec<Token>,
     current: i32,
+    lox: &'a mut Lox,
 }
 
 /* Parser
     As part of parsing, the Token is converted to TokenType
 */
-impl Parser {
-    pub fn new_parser(tokens: Vec<Token>) -> Parser {
-        Parser { tokens, current: 0 }
+impl<'a> Parser<'a> {
+    pub fn new_parser(tokens: Vec<Token>, lox: &'a mut Lox) -> Parser<'a> {
+        Parser {
+            tokens,
+            current: 0,
+            lox,
+        }
     }
 
     /*
      Recursive Descent Methods
     */
-    fn expression(&mut self) -> Expr {
+    fn expression(&mut self) -> Result<Expr> {
         self.equality()
     }
 
-    fn equality(&mut self) -> Expr {
-        let mut expr = self.comparison();
+    fn equality(&mut self) -> Result<Expr> {
+        let mut expr = self.comparison()?;
         while (self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual])) {
             let operator: TokenType = self.previous();
-            let right = self.comparison();
+            let right = self.comparison()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator: operator,
                 right: Box::new(right),
             }
         }
-        expr
+        Ok(expr)
     }
 
-    fn comparison(&mut self) -> Expr {
-        let mut expr = self.term();
+    fn comparison(&mut self) -> Result<Expr> {
+        let mut expr = self.term()?;
         while self.match_types(vec![
             TokenType::GREATER,
             TokenType::GreaterEqual,
@@ -49,70 +56,76 @@ impl Parser {
             TokenType::LessEqual,
         ]) {
             let operator = self.previous();
-            let right = self.term();
+            let right = self.term()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
                 right: Box::new(right),
             }
         }
-        expr
+        Ok(expr)
     }
 
-    fn term(&mut self) -> Expr {
-        let mut expr = self.factor();
+    fn term(&mut self) -> Result<Expr> {
+        let mut expr = self.factor()?;
         while self.match_types(vec![TokenType::PLUS, TokenType::MINUS]) {
             let operator = self.previous();
-            let right = self.factor();
+            let right = self.factor()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
                 right: Box::new(right),
             }
         }
-        expr
+        Ok(expr)
     }
 
-    fn factor(&mut self) -> Expr {
-        let mut expr = self.unary();
+    fn factor(&mut self) -> Result<Expr> {
+        let mut expr = self.unary()?;
         while self.match_types(vec![TokenType::SLASH, TokenType::STAR]) {
             let operator = self.previous();
-            let right = self.unary();
+            let right = self.unary()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
                 right: Box::new(right),
             }
         }
-        expr
+        Ok(expr)
     }
 
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> Result<Expr> {
         if self.match_types(vec![TokenType::BANG, TokenType::MINUS]) {
             let operator = self.previous();
-            let right = self.unary();
-            return Expr::Unary {
+            let right = self.unary()?;
+            return Ok(Expr::Unary {
                 operator,
                 right: Box::new(right),
-            };
+            });
         }
         self.primary()
     }
 
-    fn primary(&mut self) -> Expr {
+    fn primary(&mut self) -> Result<Expr> {
         let next = self.advance();
         match next {
             TokenType::LeftParen => {
                 // ToDo!!!
-                let expr = self.expression();
-                self.consume(TokenType::RightParen, "Expect ')' after expression.");
-                return Expr::Grouping(Box::new(expr));
+                let expr = self.expression()?;
+                self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
+                return Ok(Expr::Grouping(Box::new(expr)));
             }
-            _ => return Expr::Literal { value: next },
+            _ => return Ok(Expr::Literal { value: next }),
         }
     }
 
     // Descent helpers
+    fn consume(&mut self, ttype: TokenType, message: &str) -> Result<TokenType> {
+        if self.check(ttype) {
+            return Ok(self.advance());
+        }
+        Err(anyhow!("{}", message))
+    }
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {
         for ty in types {
             if (self.check(ty)) {
@@ -147,12 +160,10 @@ impl Parser {
         let tok = self.tokens[i].clone();
         tok.get_type()
     }
-    fn consume(&mut self, ttype: TokenType, message: &str) -> TokenType {
-        if self.check(ttype) {
-            return self.advance();
-        }
-        panic!("{}", message);
-    }
+}
+
+fn report_error(tok: Token, message: &str) {
+    // To Do
 }
 
 #[cfg(test)]
@@ -169,7 +180,8 @@ mod tests {
 
     #[test]
     fn test_check() {
-        let par = Parser::new_parser(vec![gen_token(0), gen_token(1)]);
+        let mut t_lox = Lox { had_error: false };
+        let par = Parser::new_parser(vec![gen_token(0), gen_token(1)], &mut t_lox);
         assert!(par.check(TokenType::DOT));
         assert!(!par.check(TokenType::MINUS));
     }
