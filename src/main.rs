@@ -6,7 +6,8 @@ use std::io::stdout;
 use std::process;
 
 use crate::scanner::Scanner;
-// use crate::scanner::token::Token;
+use crate::scanner::TokenType;
+use crate::scanner::token::Token;
 
 pub mod expr;
 mod parser;
@@ -69,8 +70,19 @@ impl Lox {
         }
     }
 
-    pub fn error(&mut self, line: i32, message: String) {
+    pub fn scan_error(&mut self, line: i32, message: String) {
         self.report(line, "".to_string(), message);
+    }
+
+    pub fn parse_error(&mut self, tok: Token, message: String) {
+        match tok.get_type() {
+            TokenType::EOF => self.report(tok.get_line(), " at end".to_string(), message),
+            _ => self.report(
+                tok.get_line(),
+                format! {" at '{}'", tok.get_lexeme()},
+                message,
+            ),
+        }
     }
 
     fn report(&mut self, line: i32, loc: String, message: String) {

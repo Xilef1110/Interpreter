@@ -97,7 +97,7 @@ impl<'a> Scanner<'a> {
                     self.identifier();
                 } else {
                     self.lox
-                        .error(self.line, "Unexpected character".to_string())
+                        .scan_error(self.line, "Unexpected character".to_string())
                 }
             }
         }
@@ -161,7 +161,8 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
         if self.is_at_end() {
-            self.lox.error(self.line, "Unterminated String".to_string());
+            self.lox
+                .scan_error(self.line, "Unterminated String".to_string());
         }
         // closing "
         self.advance();

@@ -29,6 +29,12 @@ impl Token {
     pub fn get_type(&self) -> TokenType {
         self.ttype.clone()
     }
+    pub fn get_line(&self) -> i32 {
+        self.line
+    }
+    pub fn get_lexeme(&self) -> String {
+        self.lexeme.clone()
+    }
 }
 
 // impl Clone for Token {

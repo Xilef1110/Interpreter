@@ -29,6 +29,16 @@ impl<'a> Parser<'a> {
     /*
      Recursive Descent Methods
     */
+    pub fn parse(&mut self) -> Expr {
+        match self.expression() {
+            Ok(expr) => expr,
+            Err(_error) => {
+                self.synchronize();
+                Expr::Error
+            }
+        }
+    }
+
     fn expression(&mut self) -> Result<Expr> {
         self.equality()
     }
@@ -115,7 +125,14 @@ impl<'a> Parser<'a> {
                 self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
                 return Ok(Expr::Grouping(Box::new(expr)));
             }
-            _ => return Ok(Expr::Literal { value: next }),
+            TokenType::FALSE | TokenType::TRUE | TokenType::NIL => {
+                return Ok(Expr::Literal { value: next });
+            }
+            TokenType::NUMBER(n) => Ok(Expr::Literal { value: next }),
+            _ => {
+                self.lox.parse_error(next, "Expect Expression".to_string());
+                Err(anyhow! {"test"})
+            }
         }
     }
 
@@ -124,7 +141,7 @@ impl<'a> Parser<'a> {
         if self.check(ttype) {
             return Ok(self.advance().get_type());
         }
-        Err(anyhow!("{}", message))
+        self.error(self.peek_tok(), message)
     }
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {
         for ty in types {
@@ -155,15 +172,47 @@ impl<'a> Parser<'a> {
         let tok = self.tokens[i].clone();
         tok.get_type()
     }
+    fn peek_tok(&self) -> Token {
+        let i: usize = self.current as usize;
+        let tok = self.tokens[i].clone();
+        tok
+    }
     fn previous(&self) -> Token {
         let i: usize = (self.current - 1) as usize;
         let tok = self.tokens[i].clone();
         tok
     }
-}
 
-fn report_error(tok: Token, message: &str) {
-    // ToDo!!!
+    // Error Handling
+
+    fn error(&mut self, tok: Token, message: &str) -> Result<TokenType> {
+        self.lox.parse_error(tok, message.to_string());
+        Err(anyhow!("{}", message))
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().get_type() == TokenType::SEMICOLON {
+                return;
+            }
+
+            if let TokenType::CLASS
+            | TokenType::FUN
+            | TokenType::VAR
+            | TokenType::FOR
+            | TokenType::IF
+            | TokenType::WHILE
+            | TokenType::PRINT
+            | TokenType::RETURN = self.peek()
+            {
+                return;
+            }
+
+            self.advance();
+        }
+    }
 }
 
 #[cfg(test)]

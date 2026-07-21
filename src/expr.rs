@@ -1,4 +1,4 @@
-use crate::scanner::TokenType;
+// use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 pub enum Expr {
     Assign,
@@ -22,6 +22,7 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Variable,
+    Error,
 }
 
 pub fn print_expr(expr_p: Box<Expr>) -> String {
