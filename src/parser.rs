@@ -35,8 +35,8 @@ impl<'a> Parser<'a> {
 
     fn equality(&mut self) -> Result<Expr> {
         let mut expr = self.comparison()?;
-        while (self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual])) {
-            let operator: TokenType = self.previous();
+        while self.match_types(vec![TokenType::BangEqual, TokenType::EqualEqual]) {
+            let operator: Token = self.previous();
             let right = self.comparison()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
@@ -108,7 +108,7 @@ impl<'a> Parser<'a> {
 
     fn primary(&mut self) -> Result<Expr> {
         let next = self.advance();
-        match next {
+        match next.get_type() {
             TokenType::LeftParen => {
                 // ToDo!!!
                 let expr = self.expression()?;
@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
     // Descent helpers
     fn consume(&mut self, ttype: TokenType, message: &str) -> Result<TokenType> {
         if self.check(ttype) {
-            return Ok(self.advance());
+            return Ok(self.advance().get_type());
         }
         Err(anyhow!("{}", message))
     }
@@ -141,7 +141,7 @@ impl<'a> Parser<'a> {
         }
         ttype == self.peek()
     }
-    fn advance(&mut self) -> TokenType {
+    fn advance(&mut self) -> Token {
         if !self.is_at_end() {
             self.current += 1
         }
@@ -155,10 +155,10 @@ impl<'a> Parser<'a> {
         let tok = self.tokens[i].clone();
         tok.get_type()
     }
-    fn previous(&self) -> TokenType {
+    fn previous(&self) -> Token {
         let i: usize = (self.current - 1) as usize;
         let tok = self.tokens[i].clone();
-        tok.get_type()
+        tok
     }
 }
 
