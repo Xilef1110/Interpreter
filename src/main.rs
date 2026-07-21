@@ -5,6 +5,8 @@ use std::io::stdin;
 use std::io::stdout;
 use std::process;
 
+// use crate::expr;
+use crate::parser::Parser;
 use crate::scanner::Scanner;
 use crate::scanner::TokenType;
 use crate::scanner::token::Token;
@@ -65,9 +67,15 @@ impl Lox {
         println!("{}", input);
         let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
         let tokens = scanner.scan_tokens();
-        for tok in tokens.into_iter() {
-            println!("{}", tok.to_string());
+        let mut parser = Parser::new_parser(tokens, self);
+        let expression = parser.parse();
+        if self.had_error {
+            return;
         }
+        print! {"{}", expr::print_expr(expression)}
+        // for tok in tokens.into_iter() {
+        //     println!("{}", tok.to_string());
+        // }
     }
 
     pub fn scan_error(&mut self, line: i32, message: String) {

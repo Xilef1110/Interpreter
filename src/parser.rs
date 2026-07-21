@@ -8,7 +8,7 @@ use crate::{
 };
 use anyhow::{Error, Result, anyhow};
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     tokens: Vec<Token>,
     current: i32,
     lox: &'a mut Lox,
@@ -29,12 +29,12 @@ impl<'a> Parser<'a> {
     /*
      Recursive Descent Methods
     */
-    pub fn parse(&mut self) -> Expr {
+    pub fn parse(&mut self) -> Box<Expr> {
         match self.expression() {
-            Ok(expr) => expr,
+            Ok(expr) => Box::new(expr),
             Err(_error) => {
                 self.synchronize();
-                Expr::Error
+                Box::new(Expr::Error)
             }
         }
     }
