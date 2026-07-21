@@ -20,7 +20,7 @@ impl Token {
     }
 
     pub fn to_string(&self) -> String {
-        let loc_type = self.ttype.clone();
+        let loc_type = TokenType::as_string(self.ttype.clone());
         let lexeme = self.lexeme.clone();
         let literal = self.line;
         format!("{loc_type} {lexeme} {literal}")
