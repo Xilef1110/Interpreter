@@ -23,7 +23,7 @@ impl Token {
         let loc_type = TokenType::as_string(self.ttype.clone());
         let lexeme = self.lexeme.clone();
         let literal = self.line;
-        format!("{loc_type} {lexeme} {literal}")
+        format!("[{loc_type} lexeme:{lexeme} line:{literal}]")
     }
 
     pub fn get_type(&self) -> TokenType {
