@@ -55,6 +55,7 @@ pub fn print_expr(expr_p: Box<Expr>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::TokenType;
 
     #[test]
     fn test_print_literal() {
