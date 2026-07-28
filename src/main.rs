@@ -12,6 +12,7 @@ use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 
 pub mod expr;
+mod interp;
 mod parser;
 pub mod scanner;
 
