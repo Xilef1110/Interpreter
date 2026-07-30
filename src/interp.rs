@@ -5,6 +5,12 @@ fn evaluate(ex: Expr) -> TokenType {
     match ex {
         Expr::Literal { value } => lit_expr(value),
         Expr::Grouping(inside) => group_expr(*inside),
+        Expr::Unary { operator, right } => unary_expr(operator, *right),
+        Expr::Binary {
+            left,
+            operator,
+            right,
+        } => binary_expr(operator, *left, *right),
         _ => TokenType::NIL,
     }
 }
