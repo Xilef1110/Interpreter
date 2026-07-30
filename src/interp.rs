@@ -131,7 +131,7 @@ fn handle_string(ttype: TokenType) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::TokenType;
+    use crate::{TokenType, scanner::token::token_type};
     // use crate::scanner::token::Token;
 
     // ── Helpers ──────────────────────────────────────────
@@ -153,37 +153,35 @@ mod tests {
     fn str_expr(s: &str) -> Expr {
         Expr::Literal { value: str_tok(s) }
     }
+    fn new_group_expr(ex: Expr) -> Expr {
+        Expr::Grouping(Box::new(ex))
+    }
+    fn new_unary_expr(ttype: TokenType, ex: Expr) -> Expr {
+        Expr::Unary {
+            operator: tok(ttype),
+            right: Box::new(ex),
+        }
+    }
+    fn new_binary_expr(ttype: TokenType, left: Expr, right: Expr) -> Expr {
+        Expr::Binary {
+            left: Box::new(left),
+            operator: tok(ttype),
+            right: Box::new(right),
+        }
+    }
 
     // ── evaluate ─────────────────────────────────────────
+    // Since evaluate is just a match statement that unwraps expressions, before calling relevant helpers, testing both the helpers and evaluate is redundant
     #[test]
-    fn evaluate_literal_number() {
-        assert_eq!(evaluate(num_expr(42.0)), TokenType::NUMBER(42.0));
-    }
-    #[test]
-    fn evaluate_literal_string() {
-        assert_eq!(evaluate(str_expr("hi")), TokenType::STRING("hi".to_owned()));
-    }
-    #[test]
-    fn evaluate_literal_true() {
-        assert_eq!(evaluate(new_lit_expr(TokenType::TRUE)), TokenType::TRUE);
-    }
-    #[test]
-    fn evaluate_literal_false() {
-        assert_eq!(evaluate(new_lit_expr(TokenType::FALSE)), TokenType::FALSE);
-    }
-    #[test]
-    fn evaluate_literal_nil() {
-        assert_eq!(evaluate(new_lit_expr(TokenType::NIL)), TokenType::NIL);
-    }
-    #[test]
-    fn evaluate_grouping() {
-        let inner = Expr::Grouping(Box::new(num_expr(7.0)));
-        assert_eq!(evaluate(inner), TokenType::NUMBER(7.0));
-    }
-    #[test]
-    fn evaluate_nested_grouping() {
-        let inner = Expr::Grouping(Box::new(Expr::Grouping(Box::new(num_expr(3.0)))));
-        assert_eq!(evaluate(inner), TokenType::NUMBER(3.0));
+    fn test_large_num_expr() {
+        let one = num_expr(1.0);
+        let two = num_expr(2.0);
+        let three = num_expr(3.0);
+        let ntwo = new_unary_expr(TokenType::MINUS, two);
+        let four = new_binary_expr(TokenType::PLUS, one, three);
+        let group = new_group_expr(four);
+        let result = new_binary_expr(TokenType::STAR, group, ntwo);
+        assert_eq!(evaluate(result), TokenType::NUMBER(-8.0));
     }
 
     // ── lit_expr ─────────────────────────────────────────
