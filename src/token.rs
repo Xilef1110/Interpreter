@@ -3,7 +3,7 @@ pub mod token_type;
 
 use token_type::TokenType;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Token {
     ttype: TokenType,
     lexeme: String,
