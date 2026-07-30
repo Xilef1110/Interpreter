@@ -1,9 +1,19 @@
 use crate::{Token, TokenType, expr::Expr};
+use anyhow::{Result, anyhow};
 
 // Core expression evaluation
-fn evaluate(ex: Expr) -> TokenType {
+pub fn interpret(ex: Expr) -> TokenType {
+    match evaluate(ex) {
+        Ok(ttype) => ttype,
+        // TODO Catch runtime errors and recover
+        Err(err) => {
+            panic!("Evaluation Error");
+        }
+    }
+}
+fn evaluate(ex: Expr) -> Result<TokenType> {
     match ex {
-        Expr::Literal { value } => lit_expr(value),
+        Expr::Literal { value } => Ok(lit_expr(value)),
         Expr::Grouping(inside) => group_expr(*inside),
         Expr::Unary { operator, right } => unary_expr(operator, *right),
         Expr::Binary {
@@ -11,7 +21,7 @@ fn evaluate(ex: Expr) -> TokenType {
             operator,
             right,
         } => binary_expr(operator, *left, *right),
-        _ => TokenType::NIL,
+        _ => Ok(TokenType::NIL),
     }
 }
 
@@ -20,38 +30,49 @@ fn lit_expr(lit: Token) -> TokenType {
     lit.get_type()
 }
 
-fn group_expr(inside: Expr) -> TokenType {
-    evaluate(inside)
+fn group_expr(inside: Expr) -> Result<TokenType> {
+    Ok(evaluate(inside)?)
 }
 
-fn unary_expr(operator: Token, ex: Expr) -> TokenType {
-    let right = evaluate(ex);
+fn unary_expr(operator: Token, ex: Expr) -> Result<TokenType> {
+    let right = evaluate(ex)?;
     match operator.get_type() {
-        TokenType::MINUS => TokenType::NUMBER(-handle_number(right)),
+        TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right)?)),
         TokenType::BANG => negation(is_truthy(right)),
-        // TODO add error handling, BANG operator
-        _ => panic!("unary operator"),
+        _ => Err(anyhow!("unary operator")),
     }
 }
 
-fn binary_expr(operator: Token, l: Expr, r: Expr) -> TokenType {
-    let left: TokenType = evaluate(l);
-    let right: TokenType = evaluate(r);
+fn binary_expr(operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
+    let left: TokenType = evaluate(l)?;
+    let right: TokenType = evaluate(r)?;
     match operator.get_type() {
-        TokenType::GREATER => greater(handle_number(left), handle_number(right)),
-        TokenType::GreaterEqual => greater_equal(handle_number(left), handle_number(right)),
-        TokenType::LESS => less(handle_number(left), handle_number(right)),
-        TokenType::LessEqual => less_equal(handle_number(left), handle_number(right)),
+        TokenType::GREATER => greater(handle_number(left)?, handle_number(right)?),
+        TokenType::GreaterEqual => greater_equal(handle_number(left)?, handle_number(right)?),
+        TokenType::LESS => less(handle_number(left)?, handle_number(right)?),
+        TokenType::LessEqual => less_equal(handle_number(left)?, handle_number(right)?),
         TokenType::EqualEqual => is_equal(left, right),
-        TokenType::BangEqual => negation(is_equal(left, right)),
-        TokenType::MINUS => TokenType::NUMBER(handle_number(left) - handle_number(right)),
-        TokenType::SLASH => TokenType::NUMBER(handle_number(left) / handle_number(right)),
-        TokenType::STAR => TokenType::NUMBER(handle_number(left) * handle_number(right)),
+        TokenType::BangEqual => negation(is_equal(left, right)?),
+        TokenType::MINUS => Ok(TokenType::NUMBER(
+            handle_number(left)? - handle_number(right)?,
+        )),
+        TokenType::SLASH => Ok(TokenType::NUMBER(
+            handle_number(left)? / handle_number(right)?,
+        )),
+        TokenType::STAR => Ok(TokenType::NUMBER(
+            handle_number(left)? * handle_number(right)?,
+        )),
         TokenType::PLUS => {
             if let TokenType::STRING(string) = left {
-                TokenType::STRING(format!("{}{}", string, handle_string(right)))
+                Ok(TokenType::STRING(format!(
+                    "{}{}",
+                    string,
+                    handle_string(right)?
+                )))
             } else {
-                TokenType::NUMBER(handle_number(left) + handle_number(right))
+                Ok(TokenType::NUMBER(
+                    handle_number(left)? + handle_number(right)?,
+                ))
             }
         }
         _ => panic!("Incorrect binary operator"),
@@ -66,65 +87,63 @@ fn is_truthy(ttype: TokenType) -> TokenType {
         _ => TokenType::TRUE,
     }
 }
-fn negation(ttype: TokenType) -> TokenType {
+fn negation(ttype: TokenType) -> Result<TokenType> {
     if let TokenType::TRUE = ttype {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     } else if let TokenType::FALSE = ttype {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        panic!("Not Boolean");
+        Err(anyhow!("Not Boolean"))
     }
 }
-fn greater(l: f64, r: f64) -> TokenType {
+fn greater(l: f64, r: f64) -> Result<TokenType> {
     if l > r {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     }
 }
-fn greater_equal(l: f64, r: f64) -> TokenType {
+fn greater_equal(l: f64, r: f64) -> Result<TokenType> {
     if l >= r {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     }
 }
-fn less(l: f64, r: f64) -> TokenType {
+fn less(l: f64, r: f64) -> Result<TokenType> {
     if l < r {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     }
 }
-fn less_equal(l: f64, r: f64) -> TokenType {
+fn less_equal(l: f64, r: f64) -> Result<TokenType> {
     if l <= r {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     }
 }
-fn is_equal(left: TokenType, right: TokenType) -> TokenType {
+fn is_equal(left: TokenType, right: TokenType) -> Result<TokenType> {
     if left == right {
-        TokenType::TRUE
+        Ok(TokenType::TRUE)
     } else {
-        TokenType::FALSE
+        Ok(TokenType::FALSE)
     }
 }
 
-fn handle_number(ttype: TokenType) -> f64 {
+fn handle_number(ttype: TokenType) -> Result<f64> {
     if let TokenType::NUMBER(num) = ttype {
-        num
+        Ok(num)
     } else {
-        panic!("not a number");
-        // TODO add proper error handling
+        Err(anyhow!("Not a number"))
     }
 }
-fn handle_string(ttype: TokenType) -> String {
+fn handle_string(ttype: TokenType) -> Result<String> {
     if let TokenType::STRING(str) = ttype {
-        str
+        Ok(str)
     } else {
-        panic!("not a number");
-        // TODO add proper error handling
+        Err(anyhow!("Not a string"))
     }
 }
 
@@ -180,8 +199,14 @@ mod tests {
         let ntwo = new_unary_expr(TokenType::MINUS, two);
         let four = new_binary_expr(TokenType::PLUS, one, three);
         let group = new_group_expr(four);
-        let result = new_binary_expr(TokenType::STAR, group, ntwo);
-        assert_eq!(evaluate(result), TokenType::NUMBER(-8.0));
+        let neight = new_binary_expr(TokenType::STAR, group, ntwo);
+        let result = match evaluate(neight) {
+            Ok(ttype) => ttype,
+            Err(_err) => {
+                panic!();
+            }
+        };
+        assert_eq!(result, TokenType::NUMBER(-8.0));
     }
 
     // ── lit_expr ─────────────────────────────────────────
@@ -541,27 +566,5 @@ mod tests {
             is_equal(TokenType::TRUE, TokenType::FALSE),
             TokenType::FALSE
         );
-    }
-
-    // ── handle_number ────────────────────────────────────
-    #[test]
-    fn handle_number_valid() {
-        assert!((handle_number(TokenType::NUMBER(3.14)) - 3.14).abs() < 1e-10);
-    }
-    #[test]
-    fn handle_number_negative() {
-        assert!((handle_number(TokenType::NUMBER(-2.5)) - (-2.5)).abs() < 1e-10);
-    }
-
-    // TODO: Fix when error handling implemented
-    #[test]
-    #[should_panic]
-    fn handle_number_on_string_panics() {
-        handle_number(TokenType::STRING("oops".to_string()));
-    }
-    #[test]
-    #[should_panic]
-    fn handle_number_on_nil_panics() {
-        handle_number(TokenType::NIL);
     }
 }

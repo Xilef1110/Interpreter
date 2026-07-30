@@ -6,7 +6,7 @@ use crate::{
         token::Token,
     },
 };
-use anyhow::{Error, Result, anyhow};
+use anyhow::{Result, anyhow};
 
 pub struct Parser<'a> {
     tokens: Vec<Token>,
@@ -120,7 +120,7 @@ impl<'a> Parser<'a> {
         let next = self.advance();
         match next.get_type() {
             TokenType::LeftParen => {
-                // ToDo!!!
+                // TODO!!!
                 let expr = self.expression()?;
                 self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
                 return Ok(Expr::Grouping(Box::new(expr)));
