@@ -499,7 +499,6 @@ mod tests {
         );
     }
 
-    // TODO: Fix when error handling is implemented
     #[test]
     #[should_panic(expected = "Incorrect binary operator")]
     fn binary_unknown_operator_panics() {
