@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_constructor() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
         assert_eq!("test".to_string(), scan.source);
         assert_eq!(0, scan.start);
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn test_is_at_end() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
         assert!(!scan.is_at_end());
         scan.current += 3;
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_add_token() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
         scan.add_token(TokenType::AND);
         scan.add_token(TokenType::BANG);
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_advance_and_check_functions() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("test".to_string(), &mut t_lox);
         assert!(scan.match_next("t"));
         assert_eq!("t", scan.peek());
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_string() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("\"test\"".to_string(), &mut t_lox);
         scan.current += 1;
         scan.string();
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_number() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
         scan.current += 1;
         scan.number();
@@ -359,7 +359,7 @@ mod tests {
 
     #[test]
     fn test_identifier() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let mut scan: Scanner = Scanner::new_scanner("1234".to_string(), &mut t_lox);
         scan.identifier();
         assert!(match scan.tokens[0].get_type() {

@@ -18,11 +18,12 @@ pub mod scanner;
 
 pub struct Lox {
     had_error: bool,
+    had_runtime_error: bool,
 }
 
 fn main() {
     let arglength = std::env::args().len();
-    let mut interp = Lox { had_error: false };
+    let mut interp = Lox::new_lox();
     if arglength > 2 {
         print!("To many arguments");
         process::exit(63);
@@ -34,6 +35,12 @@ fn main() {
 }
 
 impl Lox {
+    pub fn new_lox() -> Lox {
+        Lox {
+            had_error: false,
+            had_runtime_error: false,
+        }
+    }
     fn run_file(&mut self, filepath: String) {
         println!("Command line argument: {:?}", filepath);
         let contents = std::fs::read_to_string(filepath).expect("File should have opened");
@@ -41,6 +48,9 @@ impl Lox {
         self.run(contents);
         if self.had_error {
             std::process::exit(65)
+        }
+        if self.had_runtime_error {
+            std::process::exit(75)
         }
     }
 
@@ -73,7 +83,7 @@ impl Lox {
         if self.had_error {
             return;
         }
-        print! {"{}", expr::print_expr(expression)}
+        interp::interpret(*expression, self);
         // for tok in tokens.into_iter() {
         //     println!("{}", tok.to_string());
         // }
@@ -94,8 +104,17 @@ impl Lox {
         }
     }
 
+    pub fn runtime_error(&mut self, message: String) {
+        self.runtime_report(message);
+    }
+
     fn report(&mut self, line: i32, loc: String, message: String) {
         println!("[line {} ] Error {}: {}", line, loc, message);
         self.had_error = true;
+    }
+
+    fn runtime_report(&mut self, message: String) {
+        println!("{}", message);
+        self.had_runtime_error = true;
     }
 }
