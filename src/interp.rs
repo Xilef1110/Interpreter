@@ -1,8 +1,8 @@
-use crate::{Token, TokenType, expr::Expr};
+use crate::{Lox, Token, TokenType, expr::Expr};
 use anyhow::{Result, anyhow};
 
 // Core expression evaluation
-pub fn interpret(ex: Expr) -> TokenType {
+pub fn interpret(ex: Expr, lox: Lox) -> TokenType {
     match evaluate(ex) {
         Ok(ttype) => ttype,
         // TODO Catch runtime errors and recover
@@ -144,6 +144,17 @@ fn handle_string(ttype: TokenType) -> Result<String> {
         Ok(str)
     } else {
         Err(anyhow!("Not a string"))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RuntimeError {
+    tok: Token,
+}
+
+impl RuntimeError {
+    fn runtime_err(tok: Token) -> RuntimeError {
+        RuntimeError { tok }
     }
 }
 
