@@ -2,12 +2,13 @@ use crate::{Lox, Token, TokenType, expr::Expr};
 use anyhow::{Result, anyhow};
 
 // Core expression evaluation
-pub fn interpret(ex: Expr, lox: &Lox) -> TokenType {
+pub fn interpret(ex: Expr, lox: &mut Lox) {
     match evaluate(ex) {
-        Ok(ttype) => ttype,
-        // TODO Catch runtime errors and recover
+        Ok(ttype) => {
+            println!("{}", ttype.stringify());
+        }
         Err(err) => {
-            panic!("{}", err.to_string());
+            lox.runtime_error(err.to_string());
         }
     }
 }
@@ -97,7 +98,7 @@ fn negation(ttype: TokenType, line: i32) -> Result<TokenType> {
     } else if let TokenType::FALSE = ttype {
         Ok(TokenType::TRUE)
     } else {
-        Err(anyhow!("Expected Boolean: {line}", line))
+        Err(anyhow!("Expected Boolean: {}", line))
     }
 }
 fn greater(l: f64, r: f64) -> Result<TokenType> {

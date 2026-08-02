@@ -49,14 +49,23 @@ pub enum TokenType {
     EOF,
 }
 impl TokenType {
-    pub fn as_string(tok: TokenType) -> String {
-        match tok {
+    pub fn as_string(ttype: TokenType) -> String {
+        match ttype {
             TokenType::STRING(str) => {
                 let nstr = str.clone();
                 format!("String:{nstr}")
             }
             TokenType::NUMBER(num) => format!("Number:{num}"),
-            _ => format!("{tok}"),
+            _ => format!("{ttype}"),
+        }
+    }
+    pub fn stringify(&self) -> String {
+        match self {
+            TokenType::STRING(str) => {
+                format!("{}", str.clone())
+            }
+            TokenType::NUMBER(num) => format!("{num}"),
+            _ => format!("{self}"),
         }
     }
 }

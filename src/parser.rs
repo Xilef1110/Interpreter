@@ -1,10 +1,7 @@
 use crate::{
     Lox,
     expr::Expr,
-    scanner::{
-        TokenType::{self, FALSE},
-        token::Token,
-    },
+    scanner::{TokenType, token::Token},
 };
 use anyhow::{Result, anyhow};
 
@@ -229,7 +226,7 @@ mod tests {
 
     #[test]
     fn test_check() {
-        let mut t_lox = Lox { had_error: false };
+        let mut t_lox = Lox::new_lox();
         let par = Parser::new_parser(vec![gen_token(0), gen_token(1)], &mut t_lox);
         assert!(par.check(TokenType::DOT));
         assert!(!par.check(TokenType::MINUS));
