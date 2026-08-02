@@ -125,7 +125,8 @@ impl<'a> Parser<'a> {
             TokenType::FALSE | TokenType::TRUE | TokenType::NIL => {
                 return Ok(Expr::Literal { value: next });
             }
-            TokenType::NUMBER(n) => Ok(Expr::Literal { value: next }),
+            TokenType::NUMBER(_n) => Ok(Expr::Literal { value: next }),
+            TokenType::STRING(_str) => Ok(Expr::Literal { value: next }),
             _ => {
                 self.lox.parse_error(next, "Expect Expression".to_string());
                 Err(anyhow! {"test"})
@@ -142,7 +143,7 @@ impl<'a> Parser<'a> {
     }
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {
         for ty in types {
-            if (self.check(ty)) {
+            if self.check(ty) {
                 self.advance();
                 return true;
             }
@@ -150,7 +151,7 @@ impl<'a> Parser<'a> {
         false
     }
     fn check(&self, ttype: TokenType) -> bool {
-        if (self.is_at_end()) {
+        if self.is_at_end() {
             return false;
         }
         ttype == self.peek()

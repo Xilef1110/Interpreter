@@ -84,9 +84,6 @@ impl Lox {
             return;
         }
         interp::interpret(*expression, self);
-        // for tok in tokens.into_iter() {
-        //     println!("{}", tok.to_string());
-        // }
     }
 
     pub fn scan_error(&mut self, line: i32, message: String) {

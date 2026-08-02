@@ -152,17 +152,6 @@ fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
     }
 }
 
-#[derive(Debug, Clone)]
-struct RuntimeError {
-    tok: Token,
-}
-
-impl RuntimeError {
-    fn runtime_err(tok: Token) -> RuntimeError {
-        RuntimeError { tok }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
