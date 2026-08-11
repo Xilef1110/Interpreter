@@ -27,14 +27,43 @@ impl<'a> Parser<'a> {
     /*
      Recursive Descent Methods
     */
-    pub fn parse(&mut self) -> Box<Expr> {
-        match self.expression() {
-            Ok(expr) => Box::new(expr),
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements = vec![];
+        while self.is_at_end() {
+            statements.push(self.statement());
+        }
+        statements
+    }
+
+    fn statement(&mut self) -> Stmt {
+        if self.match_types(vec![TokenType::PRINT]) {
+            return self.print_statement();
+        }
+        self.expr_statement()
+    }
+
+    fn expr_statement(&mut self) -> Stmt {
+        let expr: Expr = match self.expression() {
+            Ok(expr) => expr,
             Err(_error) => {
                 self.synchronize();
-                Box::new(Expr::Error)
+                Expr::Error
             }
-        }
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after expr.");
+        Stmt::Expr(expr)
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let value: Expr = match self.expression() {
+            Ok(expr) => expr,
+            Err(_error) => {
+                self.synchronize();
+                Expr::Error
+            }
+        };
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.");
+        Stmt::Print(value)
     }
 
     fn expression(&mut self) -> Result<Expr> {

@@ -22,6 +22,7 @@ fn evaluate(ex: Expr) -> Result<TokenType> {
             operator,
             right,
         } => binary_expr(operator, *left, *right),
+        Expr::Error => panic!(), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
 }
