@@ -21,7 +21,8 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    Variable,
+    Variable(Token),
+    Null, // For undefined variables
     Error,
 }
 

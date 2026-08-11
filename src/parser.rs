@@ -30,19 +30,49 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = vec![];
         while self.is_at_end() {
-            statements.push(self.statement());
+            statements.push(self.declaration());
         }
         statements
     }
 
-    fn statement(&mut self) -> Stmt {
+    fn declaration(&mut self) -> Stmt {
+        let statement: Result<Stmt>;
+        if self.match_types(vec![TokenType::VAR]) {
+            statement = self.var_declaration();
+        } else {
+            statement = self.statement()
+        }
+        // Catch Errors
+        match statement {
+            Ok(stmt) => stmt,
+            Err(_err) => {
+                self.synchronize();
+                return Stmt::Error;
+            }
+        }
+    }
+    fn var_declaration(&mut self) -> Result<Stmt> {
+        // Ok(Stmt::Block)
+        let name: Token = self.tok_consume(TokenType::IDENTIFIER, "Expect variable name.")?;
+        let mut initializer = Expr::Null;
+        if self.match_types(vec![TokenType::EQUAL]) {
+            initializer = self.expression()?;
+        }
+        self.consume(
+            TokenType::SEMICOLON,
+            "Expect ';' after variable declaration.",
+        )?;
+        Ok(Stmt::Var { name, initializer })
+    }
+
+    fn statement(&mut self) -> Result<Stmt> {
         if self.match_types(vec![TokenType::PRINT]) {
             return self.print_statement();
         }
         self.expr_statement()
     }
 
-    fn expr_statement(&mut self) -> Stmt {
+    fn expr_statement(&mut self) -> Result<Stmt> {
         let expr: Expr = match self.expression() {
             Ok(expr) => expr,
             Err(_error) => {
@@ -50,11 +80,11 @@ impl<'a> Parser<'a> {
                 Expr::Error
             }
         };
-        self.consume(TokenType::SEMICOLON, "Expect ';' after expr.");
-        Stmt::Expr(expr)
+        self.consume(TokenType::SEMICOLON, "Expect ';' after expr.")?;
+        Ok(Stmt::Expr(expr))
     }
 
-    fn print_statement(&mut self) -> Stmt {
+    fn print_statement(&mut self) -> Result<Stmt> {
         let value: Expr = match self.expression() {
             Ok(expr) => expr,
             Err(_error) => {
@@ -62,8 +92,8 @@ impl<'a> Parser<'a> {
                 Expr::Error
             }
         };
-        self.consume(TokenType::SEMICOLON, "Expect ';' after value.");
-        Stmt::Print(value)
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
+        Ok(Stmt::Print(value))
     }
 
     fn expression(&mut self) -> Result<Expr> {
@@ -145,6 +175,7 @@ impl<'a> Parser<'a> {
 
     fn primary(&mut self) -> Result<Expr> {
         let next = self.advance();
+        let line = next.get_line();
         match next.get_type() {
             TokenType::LeftParen => {
                 // TODO!!!
@@ -157,9 +188,10 @@ impl<'a> Parser<'a> {
             }
             TokenType::NUMBER(_n) => Ok(Expr::Literal { value: next }),
             TokenType::STRING(_str) => Ok(Expr::Literal { value: next }),
+            TokenType::IDENTIFIER => Ok(Expr::Variable(self.previous())),
             _ => {
                 self.lox.parse_error(next, "Expect Expression".to_string());
-                Err(anyhow! {"test"})
+                Err(anyhow! {"Expect Expression: line {}", line})
             }
         }
     }
@@ -170,6 +202,15 @@ impl<'a> Parser<'a> {
             return Ok(self.advance().get_type());
         }
         self.error(self.peek_tok(), message)
+    }
+    fn tok_consume(&mut self, ttype: TokenType, message: &str) -> Result<Token> {
+        if self.check(ttype) {
+            return Ok(self.advance());
+        }
+        match self.error(self.peek_tok(), message) {
+            Ok(_) => panic!("parser.error should always return error"),
+            Err(err) => Err(err),
+        }
     }
     fn match_types(&mut self, types: Vec<TokenType>) -> bool {
         for ty in types {

@@ -1,3 +1,4 @@
+use crate::Token;
 use crate::expr::Expr;
 
 pub enum Stmt {
@@ -8,6 +9,7 @@ pub enum Stmt {
     If,
     Print(Expr),
     Return,
-    Var,
+    Var { name: Token, initializer: Expr },
     While,
+    Error,
 }
