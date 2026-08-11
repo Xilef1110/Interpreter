@@ -1,10 +1,12 @@
+use crate::expr::Expr;
+
 pub enum Stmt {
     Block,
     Class,
-    Expr,
+    Expr(Expr),
     Func,
     If,
-    Print,
+    Print(Expr),
     Return,
     Var,
     While,

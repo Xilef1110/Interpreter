@@ -2,6 +2,7 @@ use crate::{
     Lox,
     expr::Expr,
     scanner::{TokenType, token::Token},
+    stmt::Stmt,
 };
 use anyhow::{Result, anyhow};
 

@@ -15,6 +15,7 @@ pub mod expr;
 mod interp;
 mod parser;
 pub mod scanner;
+mod stmt;
 
 pub struct Lox {
     had_error: bool,
