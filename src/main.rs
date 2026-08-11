@@ -11,6 +11,7 @@ use crate::scanner::Scanner;
 use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 
+mod environment;
 pub mod expr;
 mod interp;
 mod parser;
