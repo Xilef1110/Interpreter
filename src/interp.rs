@@ -1,14 +1,14 @@
-use crate::{Lox, Token, TokenType, expr::Expr};
+use crate::{Lox, Token, TokenType, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
 // Core expression evaluation
-pub fn interpret(ex: Expr, lox: &mut Lox) {
-    match evaluate(ex) {
-        Ok(ttype) => {
-            println!("{}", ttype.stringify());
-        }
-        Err(err) => {
-            lox.runtime_error(err.to_string());
+pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
+    for stmt in statements {
+        match execute(stmt) {
+            Ok(ttype) => {}
+            Err(err) => {
+                lox.runtime_error(err.to_string());
+            }
         }
     }
 }
@@ -25,6 +25,25 @@ fn evaluate(ex: Expr) -> Result<TokenType> {
         Expr::Error => panic!(), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
+}
+
+fn execute(stmt: Stmt) -> Result<TokenType> {
+    match stmt {
+        Stmt::Expr(expr) => expr_stmt(expr),
+        Stmt::Print(value) => print_stmt(value),
+        _ => Ok(TokenType::NIL),
+    }
+}
+
+fn expr_stmt(expr: Expr) -> Result<TokenType> {
+    evaluate(expr)?;
+    return Ok(TokenType::NIL);
+}
+
+fn print_stmt(expr: Expr) -> Result<TokenType> {
+    let value: TokenType = evaluate(expr)?;
+    print!("{}", value.stringify());
+    return Ok(TokenType::NIL);
 }
 
 // Helpers for each expression type

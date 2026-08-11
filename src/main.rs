@@ -77,14 +77,20 @@ impl Lox {
 
     fn run(&mut self, input: String) {
         println!("{}", input);
+
+        // Scan input
         let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
         let tokens = scanner.scan_tokens();
         let mut parser = Parser::new_parser(tokens, self);
-        let expression = parser.parse();
+        let statements = parser.parse();
+
+        // Stop if there was an error
         if self.had_error {
             return;
         }
-        interp::interpret(*expression, self);
+
+        // Interpret statements
+        interp::interpret(statements, self);
     }
 
     pub fn scan_error(&mut self, line: i32, message: String) {
