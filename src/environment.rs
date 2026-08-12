@@ -26,4 +26,12 @@ impl Environment {
             )),
         }
     }
+
+    pub fn assign(&mut self, name: String, value: TokenType) -> bool {
+        if self.map.contains_key(&name) {
+            self.map.insert(name, value);
+            return true;
+        }
+        false
+    }
 }

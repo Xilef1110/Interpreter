@@ -2,7 +2,10 @@
 use crate::scanner::token::Token;
 #[derive(PartialEq)]
 pub enum Expr {
-    Assign,
+    Assign {
+        name: Token,
+        value: Box<Expr>,
+    },
     Binary {
         left: Box<Expr>,
         operator: Token,

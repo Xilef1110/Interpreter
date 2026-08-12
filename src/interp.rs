@@ -6,14 +6,14 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     // let mut env = Environment::new_environment();
     for stmt in statements {
         match execute(&mut lox.env, stmt) {
-            Ok(ttype) => {} //TODO
+            Ok(_ttype) => {} // Do Nothing
             Err(err) => {
                 lox.runtime_error(err.to_string());
             }
         }
     }
 }
-fn evaluate(env: &Environment, ex: Expr) -> Result<TokenType> {
+fn evaluate(env: &mut Environment, ex: Expr) -> Result<TokenType> {
     match ex {
         Expr::Literal { value } => Ok(lit_expr(value)),
         Expr::Grouping(inside) => group_expr(env, *inside),
@@ -24,6 +24,7 @@ fn evaluate(env: &Environment, ex: Expr) -> Result<TokenType> {
             right,
         } => binary_expr(env, operator, *left, *right),
         Expr::Variable(tok) => var_expr(env, tok),
+        Expr::Assign { name, value } => assign_expr(env, name, *value),
         Expr::Error => panic!(), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
@@ -63,11 +64,11 @@ fn lit_expr(lit: Token) -> TokenType {
     lit.get_type()
 }
 
-fn group_expr(env: &Environment, inside: Expr) -> Result<TokenType> {
+fn group_expr(env: &mut Environment, inside: Expr) -> Result<TokenType> {
     Ok(evaluate(env, inside)?)
 }
 
-fn unary_expr(env: &Environment, operator: Token, ex: Expr) -> Result<TokenType> {
+fn unary_expr(env: &mut Environment, operator: Token, ex: Expr) -> Result<TokenType> {
     let right = evaluate(env, ex)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
@@ -77,7 +78,7 @@ fn unary_expr(env: &Environment, operator: Token, ex: Expr) -> Result<TokenType>
     }
 }
 
-fn binary_expr(env: &Environment, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
+fn binary_expr(env: &mut Environment, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
     let left: TokenType = evaluate(env, l)?;
     let right: TokenType = evaluate(env, r)?;
     let line: i32 = operator.get_line();
@@ -118,6 +119,14 @@ fn binary_expr(env: &Environment, operator: Token, l: Expr, r: Expr) -> Result<T
 
 fn var_expr(env: &Environment, tok: Token) -> Result<TokenType> {
     env.get(tok)
+}
+
+fn assign_expr(env: &mut Environment, name: Token, expr: Expr) -> Result<TokenType> {
+    let value = evaluate(env, expr)?;
+    if env.assign(name.get_lexeme(), value.clone()) {
+        return Ok(value);
+    }
+    Err(anyhow!("Undefined variable: {}", name.get_line()))
 }
 
 // Other Helpers
@@ -244,7 +253,7 @@ mod tests {
         let four = new_binary_expr(TokenType::PLUS, one, three);
         let group = new_group_expr(four);
         let neight = new_binary_expr(TokenType::STAR, group, ntwo);
-        let result = match evaluate(&new_env(), neight) {
+        let result = match evaluate(&mut new_env(), neight) {
             Ok(ttype) => ttype,
             Err(_err) => {
                 panic!();
@@ -272,14 +281,14 @@ mod tests {
     #[test]
     fn group_expr_passthrough() {
         assert_eq!(
-            group_expr(&new_env(), num_expr(9.0)).unwrap(),
+            group_expr(&mut new_env(), num_expr(9.0)).unwrap(),
             TokenType::NUMBER(9.0)
         );
     }
     #[test]
     fn group_expr_nested() {
         assert_eq!(
-            group_expr(&new_env(), Expr::Grouping(Box::new(num_expr(2.0)))).unwrap(),
+            group_expr(&mut new_env(), Expr::Grouping(Box::new(num_expr(2.0)))).unwrap(),
             TokenType::NUMBER(2.0)
         );
     }
@@ -327,7 +336,7 @@ mod tests {
     fn unary_minus_negates_number() {
         let op = tok(TokenType::MINUS);
         assert_eq!(
-            unary_expr(&new_env(), op, num_expr(5.0)).unwrap(),
+            unary_expr(&mut new_env(), op, num_expr(5.0)).unwrap(),
             TokenType::NUMBER(-5.0)
         );
     }
@@ -343,13 +352,16 @@ mod tests {
             operator: op,
             right: Box::new(inner),
         };
-        assert_eq!(evaluate(&new_env(), outer).unwrap(), TokenType::NUMBER(3.0));
+        assert_eq!(
+            evaluate(&mut new_env(), outer).unwrap(),
+            TokenType::NUMBER(3.0)
+        );
     }
     #[test]
     fn unary_bang_true() {
         let op = tok(TokenType::BANG);
         assert_eq!(
-            unary_expr(&new_env(), op, new_lit_expr(TokenType::TRUE)).unwrap(),
+            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::TRUE)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -357,7 +369,7 @@ mod tests {
     fn unary_bang_false() {
         let op = tok(TokenType::BANG);
         assert_eq!(
-            unary_expr(&new_env(), op, new_lit_expr(TokenType::FALSE)).unwrap(),
+            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::FALSE)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -365,7 +377,7 @@ mod tests {
     fn unary_bang_nil() {
         let op = tok(TokenType::BANG);
         assert_eq!(
-            unary_expr(&new_env(), op, new_lit_expr(TokenType::NIL)).unwrap(),
+            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::NIL)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -373,7 +385,7 @@ mod tests {
     fn unary_bang_number() {
         let op = tok(TokenType::BANG);
         assert_eq!(
-            unary_expr(&new_env(), op, num_expr(42.0)).unwrap(),
+            unary_expr(&mut new_env(), op, num_expr(42.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -381,12 +393,12 @@ mod tests {
     #[should_panic(expected = "Expected Unary Operator")]
     fn unary_unknown_operator_panics() {
         // PLUS is not a valid unary operator
-        unary_expr(&new_env(), tok(TokenType::PLUS), num_expr(1.0)).unwrap();
+        unary_expr(&mut new_env(), tok(TokenType::PLUS), num_expr(1.0)).unwrap();
     }
     #[test]
     #[should_panic(expected = "Expected Number")]
     fn unary_minus_on_non_number_panics() {
-        unary_expr(&new_env(), tok(TokenType::MINUS), str_expr("x")).unwrap();
+        unary_expr(&mut new_env(), tok(TokenType::MINUS), str_expr("x")).unwrap();
     }
 
     // ── binary_expr: arithmetic ──────────────────────────
@@ -394,7 +406,7 @@ mod tests {
     fn binary_plus_numbers() {
         let op = tok(TokenType::PLUS);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(3.0), num_expr(4.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(4.0)).unwrap(),
             TokenType::NUMBER(7.0)
         );
     }
@@ -402,7 +414,7 @@ mod tests {
     fn binary_plus_strings() {
         let op = tok(TokenType::PLUS);
         assert_eq!(
-            binary_expr(&new_env(), op, str_expr("a"), str_expr("b")).unwrap(),
+            binary_expr(&mut new_env(), op, str_expr("a"), str_expr("b")).unwrap(),
             TokenType::STRING("ab".to_owned())
         );
     }
@@ -410,7 +422,7 @@ mod tests {
     fn binary_minus() {
         let op = tok(TokenType::MINUS);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(10.0), num_expr(3.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(3.0)).unwrap(),
             TokenType::NUMBER(7.0)
         );
     }
@@ -418,7 +430,7 @@ mod tests {
     fn binary_star() {
         let op = tok(TokenType::STAR);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(6.0), num_expr(7.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(6.0), num_expr(7.0)).unwrap(),
             TokenType::NUMBER(42.0)
         );
     }
@@ -426,21 +438,21 @@ mod tests {
     fn binary_slash() {
         let op = tok(TokenType::SLASH);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(10.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(2.0)).unwrap(),
             TokenType::NUMBER(5.0)
         );
     }
     #[test]
     fn binary_slash_by_zero() {
         let op = tok(TokenType::SLASH);
-        let result = binary_expr(&new_env(), op, num_expr(1.0), num_expr(0.0)).unwrap();
+        let result = binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(0.0)).unwrap();
         assert!(matches!(result, TokenType::NUMBER(v) if v.is_infinite()));
     }
     #[test]
     #[should_panic]
     fn binary_plus_mixed_type_string_rhs() {
         let op = tok(TokenType::PLUS);
-        binary_expr(&new_env(), op, str_expr("x"), num_expr(1.0)).unwrap();
+        binary_expr(&mut new_env(), op, str_expr("x"), num_expr(1.0)).unwrap();
     }
 
     // ── binary_expr: comparison ──────────────────────────
@@ -448,7 +460,7 @@ mod tests {
     fn binary_greater_true() {
         let op = tok(TokenType::GREATER);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(5.0), num_expr(3.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(5.0), num_expr(3.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -456,7 +468,7 @@ mod tests {
     fn binary_greater_false() {
         let op = tok(TokenType::GREATER);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -464,7 +476,7 @@ mod tests {
     fn binary_greater_equal_true() {
         let op = tok(TokenType::GreaterEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -472,7 +484,7 @@ mod tests {
     fn binary_greater_equal_false() {
         let op = tok(TokenType::GreaterEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -480,7 +492,7 @@ mod tests {
     fn binary_less_true() {
         let op = tok(TokenType::LESS);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -488,7 +500,7 @@ mod tests {
     fn binary_less_false() {
         let op = tok(TokenType::LESS);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -496,7 +508,7 @@ mod tests {
     fn binary_less_equal_true() {
         let op = tok(TokenType::LessEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -504,7 +516,7 @@ mod tests {
     fn binary_less_equal_false() {
         let op = tok(TokenType::LessEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(4.0), num_expr(3.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(4.0), num_expr(3.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -512,7 +524,7 @@ mod tests {
     fn binary_equal_equal_true() {
         let op = tok(TokenType::EqualEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -520,7 +532,7 @@ mod tests {
     fn binary_equal_equal_false() {
         let op = tok(TokenType::EqualEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -528,7 +540,7 @@ mod tests {
     fn binary_equal_equal_different_types() {
         let op = tok(TokenType::EqualEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), str_expr("1")).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), str_expr("1")).unwrap(),
             TokenType::FALSE
         );
     }
@@ -536,7 +548,7 @@ mod tests {
     fn binary_bang_equal_true() {
         let op = tok(TokenType::BangEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
             TokenType::TRUE
         );
     }
@@ -544,7 +556,7 @@ mod tests {
     fn binary_bang_equal_false() {
         let op = tok(TokenType::BangEqual);
         assert_eq!(
-            binary_expr(&new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
+            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
             TokenType::FALSE
         );
     }
@@ -553,7 +565,7 @@ mod tests {
     #[should_panic(expected = "Incorrect binary operator")]
     fn binary_unknown_operator_panics() {
         binary_expr(
-            &new_env(),
+            &mut new_env(),
             tok(TokenType::LeftParen),
             num_expr(1.0),
             num_expr(2.0),
@@ -564,7 +576,7 @@ mod tests {
     #[should_panic(expected = "Expected Number")]
     fn binary_minus_on_strings_panics() {
         binary_expr(
-            &new_env(),
+            &mut new_env(),
             tok(TokenType::MINUS),
             str_expr("a"),
             str_expr("b"),

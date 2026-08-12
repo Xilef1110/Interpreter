@@ -99,7 +99,26 @@ impl<'a> Parser<'a> {
     }
 
     fn expression(&mut self) -> Result<Expr> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expr> {
+        let expr = self.equality()?;
+        if self.match_types(vec![TokenType::EQUAL]) {
+            let equals: Token = self.previous();
+            let value = self.assignment()?;
+            if let Expr::Variable(tok) = expr {
+                let name: Token = tok;
+                return Ok(Expr::Assign {
+                    name,
+                    value: Box::new(value),
+                });
+            }
+            if let Err(_err) = self.error(equals, "Invalid assignment target.") {
+                // Since the Parser is not in a confused state, there is no need to synchronize
+            }
+        }
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr> {
