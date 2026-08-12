@@ -1,49 +1,61 @@
-use crate::{Lox, Token, TokenType, expr::Expr, stmt::Stmt};
+use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
+    let mut env = Environment::new_environment();
     for stmt in statements {
-        match execute(stmt) {
-            Ok(ttype) => {}
+        match execute(&mut env, stmt) {
+            Ok(ttype) => {} //TODO
             Err(err) => {
                 lox.runtime_error(err.to_string());
             }
         }
     }
 }
-fn evaluate(ex: Expr) -> Result<TokenType> {
+fn evaluate(env: &Environment, ex: Expr) -> Result<TokenType> {
     match ex {
         Expr::Literal { value } => Ok(lit_expr(value)),
-        Expr::Grouping(inside) => group_expr(*inside),
-        Expr::Unary { operator, right } => unary_expr(operator, *right),
+        Expr::Grouping(inside) => group_expr(env, *inside),
+        Expr::Unary { operator, right } => unary_expr(env, operator, *right),
         Expr::Binary {
             left,
             operator,
             right,
-        } => binary_expr(operator, *left, *right),
+        } => binary_expr(env, operator, *left, *right),
+        Expr::Variable(tok) => var_expr(env, tok),
         Expr::Error => panic!(), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
 }
 
-fn execute(stmt: Stmt) -> Result<TokenType> {
+fn execute(env: &mut Environment, stmt: Stmt) -> Result<TokenType> {
     match stmt {
-        Stmt::Expr(expr) => expr_stmt(expr),
-        Stmt::Print(value) => print_stmt(value),
+        Stmt::Expr(expr) => expr_stmt(env, expr),
+        Stmt::Print(value) => print_stmt(env, value),
+        Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
         _ => Ok(TokenType::NIL),
     }
 }
 
-fn expr_stmt(expr: Expr) -> Result<TokenType> {
-    evaluate(expr)?;
+fn expr_stmt(env: &mut Environment, expr: Expr) -> Result<TokenType> {
+    evaluate(env, expr)?;
     return Ok(TokenType::NIL);
 }
 
-fn print_stmt(expr: Expr) -> Result<TokenType> {
-    let value: TokenType = evaluate(expr)?;
+fn print_stmt(env: &mut Environment, expr: Expr) -> Result<TokenType> {
+    let value: TokenType = evaluate(env, expr)?;
     print!("{}", value.stringify());
     return Ok(TokenType::NIL);
+}
+
+fn var_stmt(env: &mut Environment, name: Token, initializer: Expr) -> Result<TokenType> {
+    let mut value = TokenType::NIL;
+    if initializer != Expr::Null {
+        value = evaluate(env, initializer)?
+    }
+    env.define(name.get_lexeme(), value);
+    Ok(TokenType::NIL)
 }
 
 // Helpers for each expression type
@@ -51,12 +63,12 @@ fn lit_expr(lit: Token) -> TokenType {
     lit.get_type()
 }
 
-fn group_expr(inside: Expr) -> Result<TokenType> {
-    Ok(evaluate(inside)?)
+fn group_expr(env: &Environment, inside: Expr) -> Result<TokenType> {
+    Ok(evaluate(env, inside)?)
 }
 
-fn unary_expr(operator: Token, ex: Expr) -> Result<TokenType> {
-    let right = evaluate(ex)?;
+fn unary_expr(env: &Environment, operator: Token, ex: Expr) -> Result<TokenType> {
+    let right = evaluate(env, ex)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
         TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
@@ -65,9 +77,9 @@ fn unary_expr(operator: Token, ex: Expr) -> Result<TokenType> {
     }
 }
 
-fn binary_expr(operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
-    let left: TokenType = evaluate(l)?;
-    let right: TokenType = evaluate(r)?;
+fn binary_expr(env: &Environment, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
+    let left: TokenType = evaluate(env, l)?;
+    let right: TokenType = evaluate(env, r)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
         TokenType::GREATER => greater(handle_number(left, line)?, handle_number(right, line)?),
@@ -102,6 +114,10 @@ fn binary_expr(operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
         }
         _ => Err(anyhow!("Incorrect binary operator: {}", line)),
     }
+}
+
+fn var_expr(env: &Environment, tok: Token) -> Result<TokenType> {
+    env.get(tok)
 }
 
 // Other Helpers

@@ -7,6 +7,11 @@ pub struct Environment {
 }
 
 impl Environment {
+    pub fn new_environment() -> Environment {
+        Environment {
+            map: HashMap::new(),
+        }
+    }
     pub fn define(&mut self, name: String, ttype: TokenType) {
         self.map.insert(name, ttype);
     }

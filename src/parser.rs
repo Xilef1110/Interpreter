@@ -29,7 +29,8 @@ impl<'a> Parser<'a> {
     */
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = vec![];
-        while self.is_at_end() {
+        while !self.is_at_end() {
+            // panic!("parse");
             statements.push(self.declaration());
         }
         statements
@@ -37,6 +38,7 @@ impl<'a> Parser<'a> {
 
     fn declaration(&mut self) -> Stmt {
         let statement: Result<Stmt>;
+        // panic!("declaration");
         if self.match_types(vec![TokenType::VAR]) {
             statement = self.var_declaration();
         } else {

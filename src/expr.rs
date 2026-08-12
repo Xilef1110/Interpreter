@@ -1,5 +1,6 @@
 // use crate::scanner::TokenType;
 use crate::scanner::token::Token;
+#[derive(PartialEq)]
 pub enum Expr {
     Assign,
     Binary {
