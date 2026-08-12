@@ -4,12 +4,20 @@ use std::collections::HashMap;
 
 pub struct Environment {
     map: HashMap<String, TokenType>,
+    enclosing: Option<Box<Environment>>,
 }
 
 impl Environment {
-    pub fn new_environment() -> Environment {
+    pub fn new_top_environment() -> Environment {
         Environment {
             map: HashMap::new(),
+            enclosing: Option::None,
+        }
+    }
+    pub fn new_environment(enclosing: Environment) -> Environment {
+        Environment {
+            map: HashMap::new(),
+            enclosing: Option::Some(Box::new(enclosing)),
         }
     }
     pub fn define(&mut self, name: String, ttype: TokenType) {
@@ -19,11 +27,14 @@ impl Environment {
     pub fn get(&self, name: Token) -> Result<TokenType> {
         match self.map.get(&name.get_lexeme()) {
             Some(ttype) => Ok(ttype.clone()),
-            None => Err(anyhow!(
-                "Undefined variable '{}': line {}",
-                name.get_lexeme(),
-                name.get_line()
-            )),
+            None => match &self.enclosing {
+                Option::Some(env) => return env.get(name),
+                Option::None => Err(anyhow!(
+                    "Undefined variable '{}': line {}",
+                    name.get_lexeme(),
+                    name.get_line()
+                )),
+            },
         }
     }
 
@@ -32,6 +43,9 @@ impl Environment {
             self.map.insert(name, value);
             return true;
         }
-        false
+        match &mut self.enclosing {
+            Option::Some(env) => env.assign(name, value),
+            Option::None => false,
+        }
     }
 }

@@ -25,7 +25,7 @@ fn evaluate(env: &mut Environment, ex: Expr) -> Result<TokenType> {
         } => binary_expr(env, operator, *left, *right),
         Expr::Variable(tok) => var_expr(env, tok),
         Expr::Assign { name, value } => assign_expr(env, name, *value),
-        Expr::Error => panic!(), // TODO: handle this case
+        Expr::Error => panic!("evaluate error branch"), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
 }
@@ -205,7 +205,7 @@ mod tests {
 
     // ── Helpers ──────────────────────────────────────────
     fn new_env() -> Environment {
-        Environment::new_environment()
+        Environment::new_top_environment()
     }
     fn num_tok(n: f64) -> Token {
         Token::new_token(TokenType::NUMBER(n), format!("{n}"), 0)

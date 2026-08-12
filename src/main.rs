@@ -43,7 +43,7 @@ impl Lox {
         Lox {
             had_error: false,
             had_runtime_error: false,
-            env: Environment::new_environment(),
+            env: Environment::new_top_environment(),
         }
     }
     fn run_file(&mut self, filepath: String) {
