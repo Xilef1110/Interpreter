@@ -5,6 +5,7 @@ use std::io::stdin;
 use std::io::stdout;
 use std::process;
 
+use crate::environment::Environment;
 // use crate::expr;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
@@ -21,6 +22,7 @@ mod stmt;
 pub struct Lox {
     had_error: bool,
     had_runtime_error: bool,
+    env: Environment,
 }
 
 fn main() {
@@ -41,6 +43,7 @@ impl Lox {
         Lox {
             had_error: false,
             had_runtime_error: false,
+            env: Environment::new_environment(),
         }
     }
     fn run_file(&mut self, filepath: String) {

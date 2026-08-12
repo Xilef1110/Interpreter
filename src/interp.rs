@@ -3,9 +3,9 @@ use anyhow::{Result, anyhow};
 
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
-    let mut env = Environment::new_environment();
+    // let mut env = Environment::new_environment();
     for stmt in statements {
-        match execute(&mut env, stmt) {
+        match execute(&mut lox.env, stmt) {
             Ok(ttype) => {} //TODO
             Err(err) => {
                 lox.runtime_error(err.to_string());
