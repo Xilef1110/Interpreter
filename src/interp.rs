@@ -55,7 +55,7 @@ fn expr_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
 
 fn print_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
     let value: TokenType = evaluate(env, expr)?;
-    print!("{}", value.stringify());
+    println!("{}", value.stringify());
     return Ok(TokenType::NIL);
 }
 
