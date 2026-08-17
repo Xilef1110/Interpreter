@@ -9,7 +9,7 @@ use anyhow::{Result, anyhow};
 pub struct Parser<'a> {
     tokens: Vec<Token>,
     current: i32,
-    lox: &'a mut Lox<'a>,
+    lox: &'a Lox<'a>,
 }
 
 /* Parser

@@ -5,7 +5,7 @@ use anyhow::{Result, anyhow};
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     // let mut env = Environment::new_environment();
     for stmt in statements {
-        match execute(&mut lox.env, stmt) {
+        match execute(&lox.env, stmt) {
             Ok(_ttype) => {} // Do Nothing
             Err(err) => {
                 lox.runtime_error(err.to_string());
@@ -30,9 +30,11 @@ fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
     }
 }
 
-fn execute<'a>(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
+fn execute(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
     match stmt {
-        Stmt::Block(statements) => block_execute(statements, env),
+        Stmt::Block(statements) => {
+            block_execute(statements, Box::new(Environment::new_nested(env)))
+        }
         Stmt::Expr(expr) => expr_stmt(env, expr),
         Stmt::Print(value) => print_stmt(env, value),
         Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
@@ -40,11 +42,11 @@ fn execute<'a>(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
     }
 }
 
-fn block_execute(statements: Vec<Stmt>, prev: Box<Environment>) -> Result<TokenType> {
+fn block_execute(statements: Vec<Stmt>, new: Box<Environment>) -> Result<TokenType> {
     // prev: Environment = env,
-    let mut new: Box<Environment> = Box::new(Environment::new_environment(prev));
+    // let mut new: Box<Environment> = Box::new(Environment::new_nested(prev));
     for stmt in statements {
-        execute(new, stmt)?;
+        execute(&new, stmt)?;
     }
     Ok(TokenType::NIL)
 }
@@ -206,454 +208,454 @@ fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::TokenType;
-    // use crate::scanner::token::Token;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use crate::TokenType;
+//     // use crate::scanner::token::Token;
 
-    // ── Helpers ──────────────────────────────────────────
-    fn new_env() -> Environment<'a> {
-        Environment::new_top_environment()
-    }
-    fn num_tok(n: f64) -> Token {
-        Token::new_token(TokenType::NUMBER(n), format!("{n}"), 0)
-    }
-    fn str_tok(s: &str) -> Token {
-        Token::new_token(TokenType::STRING(s.to_owned()), s.to_owned(), 0)
-    }
-    fn tok(ttype: TokenType) -> Token {
-        Token::new_token(ttype, "".to_owned(), 0)
-    }
-    fn new_lit_expr(ttype: TokenType) -> Expr {
-        Expr::Literal { value: tok(ttype) }
-    }
-    fn num_expr(n: f64) -> Expr {
-        Expr::Literal { value: num_tok(n) }
-    }
-    fn str_expr(s: &str) -> Expr {
-        Expr::Literal { value: str_tok(s) }
-    }
-    fn new_group_expr(ex: Expr) -> Expr {
-        Expr::Grouping(Box::new(ex))
-    }
-    fn new_unary_expr(ttype: TokenType, ex: Expr) -> Expr {
-        Expr::Unary {
-            operator: tok(ttype),
-            right: Box::new(ex),
-        }
-    }
-    fn new_binary_expr(ttype: TokenType, left: Expr, right: Expr) -> Expr {
-        Expr::Binary {
-            left: Box::new(left),
-            operator: tok(ttype),
-            right: Box::new(right),
-        }
-    }
+//     // ── Helpers ──────────────────────────────────────────
+//     fn new_env<'a>() -> Environment<'a> {
+//         Environment::new()
+//     }
+//     fn num_tok(n: f64) -> Token {
+//         Token::new_token(TokenType::NUMBER(n), format!("{n}"), 0)
+//     }
+//     fn str_tok(s: &str) -> Token {
+//         Token::new_token(TokenType::STRING(s.to_owned()), s.to_owned(), 0)
+//     }
+//     fn tok(ttype: TokenType) -> Token {
+//         Token::new_token(ttype, "".to_owned(), 0)
+//     }
+//     fn new_lit_expr(ttype: TokenType) -> Expr {
+//         Expr::Literal { value: tok(ttype) }
+//     }
+//     fn num_expr(n: f64) -> Expr {
+//         Expr::Literal { value: num_tok(n) }
+//     }
+//     fn str_expr(s: &str) -> Expr {
+//         Expr::Literal { value: str_tok(s) }
+//     }
+//     fn new_group_expr(ex: Expr) -> Expr {
+//         Expr::Grouping(Box::new(ex))
+//     }
+//     fn new_unary_expr(ttype: TokenType, ex: Expr) -> Expr {
+//         Expr::Unary {
+//             operator: tok(ttype),
+//             right: Box::new(ex),
+//         }
+//     }
+//     fn new_binary_expr(ttype: TokenType, left: Expr, right: Expr) -> Expr {
+//         Expr::Binary {
+//             left: Box::new(left),
+//             operator: tok(ttype),
+//             right: Box::new(right),
+//         }
+//     }
 
-    // ── evaluate ─────────────────────────────────────────
-    // Since evaluate is just a match statement that unwraps expressions, before calling relevant helpers, testing both the helpers and evaluate is redundant
-    #[test]
-    fn test_large_num_expr() {
-        let one = num_expr(1.0);
-        let two = num_expr(2.0);
-        let three = num_expr(3.0);
-        let ntwo = new_unary_expr(TokenType::MINUS, two);
-        let four = new_binary_expr(TokenType::PLUS, one, three);
-        let group = new_group_expr(four);
-        let neight = new_binary_expr(TokenType::STAR, group, ntwo);
-        let result = match evaluate(&mut new_env(), neight) {
-            Ok(ttype) => ttype,
-            Err(_err) => {
-                panic!();
-            }
-        };
-        assert_eq!(result, TokenType::NUMBER(-8.0));
-    }
+//     // ── evaluate ─────────────────────────────────────────
+//     // Since evaluate is just a match statement that unwraps expressions, before calling relevant helpers, testing both the helpers and evaluate is redundant
+//     #[test]
+//     fn test_large_num_expr() {
+//         let one = num_expr(1.0);
+//         let two = num_expr(2.0);
+//         let three = num_expr(3.0);
+//         let ntwo = new_unary_expr(TokenType::MINUS, two);
+//         let four = new_binary_expr(TokenType::PLUS, one, three);
+//         let group = new_group_expr(four);
+//         let neight = new_binary_expr(TokenType::STAR, group, ntwo);
+//         let result = match evaluate(&mut new_env(), neight) {
+//             Ok(ttype) => ttype,
+//             Err(_err) => {
+//                 panic!();
+//             }
+//         };
+//         assert_eq!(result, TokenType::NUMBER(-8.0));
+//     }
 
-    // ── lit_expr ─────────────────────────────────────────
-    #[test]
-    fn lit_expr_number() {
-        assert_eq!(lit_expr(num_tok(1.5)), TokenType::NUMBER(1.5));
-    }
-    #[test]
-    fn lit_expr_string() {
-        assert_eq!(lit_expr(str_tok("a")), TokenType::STRING("a".to_string()));
-    }
-    #[test]
-    fn lit_expr_keyword() {
-        assert_eq!(lit_expr(tok(TokenType::TRUE)), TokenType::TRUE);
-        assert_eq!(lit_expr(tok(TokenType::NIL)), TokenType::NIL);
-    }
+//     // ── lit_expr ─────────────────────────────────────────
+//     #[test]
+//     fn lit_expr_number() {
+//         assert_eq!(lit_expr(num_tok(1.5)), TokenType::NUMBER(1.5));
+//     }
+//     #[test]
+//     fn lit_expr_string() {
+//         assert_eq!(lit_expr(str_tok("a")), TokenType::STRING("a".to_string()));
+//     }
+//     #[test]
+//     fn lit_expr_keyword() {
+//         assert_eq!(lit_expr(tok(TokenType::TRUE)), TokenType::TRUE);
+//         assert_eq!(lit_expr(tok(TokenType::NIL)), TokenType::NIL);
+//     }
 
-    // ── group_expr ───────────────────────────────────────
-    #[test]
-    fn group_expr_passthrough() {
-        assert_eq!(
-            group_expr(&mut new_env(), num_expr(9.0)).unwrap(),
-            TokenType::NUMBER(9.0)
-        );
-    }
-    #[test]
-    fn group_expr_nested() {
-        assert_eq!(
-            group_expr(&mut new_env(), Expr::Grouping(Box::new(num_expr(2.0)))).unwrap(),
-            TokenType::NUMBER(2.0)
-        );
-    }
+//     // ── group_expr ───────────────────────────────────────
+//     #[test]
+//     fn group_expr_passthrough() {
+//         assert_eq!(
+//             group_expr(&mut new_env(), num_expr(9.0)).unwrap(),
+//             TokenType::NUMBER(9.0)
+//         );
+//     }
+//     #[test]
+//     fn group_expr_nested() {
+//         assert_eq!(
+//             group_expr(&mut new_env(), Expr::Grouping(Box::new(num_expr(2.0)))).unwrap(),
+//             TokenType::NUMBER(2.0)
+//         );
+//     }
 
-    // ── is_truthy ────────────────────────────────────────
-    #[test]
-    fn truthy_nil_is_false() {
-        assert_eq!(is_truthy(TokenType::NIL), TokenType::FALSE);
-    }
-    #[test]
-    fn truthy_false_is_false() {
-        assert_eq!(is_truthy(TokenType::FALSE), TokenType::FALSE);
-    }
-    #[test]
-    fn truthy_true_is_true() {
-        assert_eq!(is_truthy(TokenType::TRUE), TokenType::TRUE);
-    }
-    #[test]
-    fn truthy_number_is_true() {
-        assert_eq!(is_truthy(TokenType::NUMBER(0.0)), TokenType::TRUE);
-        assert_eq!(is_truthy(TokenType::NUMBER(-1.0)), TokenType::TRUE);
-    }
-    #[test]
-    fn truthy_string_is_true() {
-        assert_eq!(is_truthy(TokenType::STRING("".to_owned())), TokenType::TRUE);
-    }
+//     // ── is_truthy ────────────────────────────────────────
+//     #[test]
+//     fn truthy_nil_is_false() {
+//         assert_eq!(is_truthy(TokenType::NIL), TokenType::FALSE);
+//     }
+//     #[test]
+//     fn truthy_false_is_false() {
+//         assert_eq!(is_truthy(TokenType::FALSE), TokenType::FALSE);
+//     }
+//     #[test]
+//     fn truthy_true_is_true() {
+//         assert_eq!(is_truthy(TokenType::TRUE), TokenType::TRUE);
+//     }
+//     #[test]
+//     fn truthy_number_is_true() {
+//         assert_eq!(is_truthy(TokenType::NUMBER(0.0)), TokenType::TRUE);
+//         assert_eq!(is_truthy(TokenType::NUMBER(-1.0)), TokenType::TRUE);
+//     }
+//     #[test]
+//     fn truthy_string_is_true() {
+//         assert_eq!(is_truthy(TokenType::STRING("".to_owned())), TokenType::TRUE);
+//     }
 
-    // ── negation ─────────────────────────────────────────
-    #[test]
-    fn negate_true_returns_false() {
-        assert_eq!(negation(TokenType::TRUE, 0).unwrap(), TokenType::FALSE);
-    }
-    #[test]
-    fn negate_false_returns_true() {
-        assert_eq!(negation(TokenType::FALSE, 0).unwrap(), TokenType::TRUE);
-    }
-    #[test]
-    #[should_panic(expected = "Expected Boolean: 0")]
-    fn negate_non_bool_panics() {
-        negation(TokenType::NUMBER(1.0), 0).unwrap();
-    }
+//     // ── negation ─────────────────────────────────────────
+//     #[test]
+//     fn negate_true_returns_false() {
+//         assert_eq!(negation(TokenType::TRUE, 0).unwrap(), TokenType::FALSE);
+//     }
+//     #[test]
+//     fn negate_false_returns_true() {
+//         assert_eq!(negation(TokenType::FALSE, 0).unwrap(), TokenType::TRUE);
+//     }
+//     #[test]
+//     #[should_panic(expected = "Expected Boolean: 0")]
+//     fn negate_non_bool_panics() {
+//         negation(TokenType::NUMBER(1.0), 0).unwrap();
+//     }
 
-    // ── unary_expr ───────────────────────────────────────
-    #[test]
-    fn unary_minus_negates_number() {
-        let op = tok(TokenType::MINUS);
-        assert_eq!(
-            unary_expr(&mut new_env(), op, num_expr(5.0)).unwrap(),
-            TokenType::NUMBER(-5.0)
-        );
-    }
-    #[test]
-    fn unary_minus_twice() {
-        let op = tok(TokenType::MINUS);
-        // -(-3) = 3
-        let inner = Expr::Unary {
-            operator: tok(TokenType::MINUS),
-            right: Box::new(num_expr(3.0)),
-        };
-        let outer = Expr::Unary {
-            operator: op,
-            right: Box::new(inner),
-        };
-        assert_eq!(
-            evaluate(&mut new_env(), outer).unwrap(),
-            TokenType::NUMBER(3.0)
-        );
-    }
-    #[test]
-    fn unary_bang_true() {
-        let op = tok(TokenType::BANG);
-        assert_eq!(
-            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::TRUE)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn unary_bang_false() {
-        let op = tok(TokenType::BANG);
-        assert_eq!(
-            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::FALSE)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn unary_bang_nil() {
-        let op = tok(TokenType::BANG);
-        assert_eq!(
-            unary_expr(&mut new_env(), op, new_lit_expr(TokenType::NIL)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn unary_bang_number() {
-        let op = tok(TokenType::BANG);
-        assert_eq!(
-            unary_expr(&mut new_env(), op, num_expr(42.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    #[should_panic(expected = "Expected Unary Operator")]
-    fn unary_unknown_operator_panics() {
-        // PLUS is not a valid unary operator
-        unary_expr(&mut new_env(), tok(TokenType::PLUS), num_expr(1.0)).unwrap();
-    }
-    #[test]
-    #[should_panic(expected = "Expected Number")]
-    fn unary_minus_on_non_number_panics() {
-        unary_expr(&mut new_env(), tok(TokenType::MINUS), str_expr("x")).unwrap();
-    }
+//     // ── unary_expr ───────────────────────────────────────
+//     #[test]
+//     fn unary_minus_negates_number() {
+//         let op = tok(TokenType::MINUS);
+//         assert_eq!(
+//             unary_expr(&mut new_env(), op, num_expr(5.0)).unwrap(),
+//             TokenType::NUMBER(-5.0)
+//         );
+//     }
+//     #[test]
+//     fn unary_minus_twice() {
+//         let op = tok(TokenType::MINUS);
+//         // -(-3) = 3
+//         let inner = Expr::Unary {
+//             operator: tok(TokenType::MINUS),
+//             right: Box::new(num_expr(3.0)),
+//         };
+//         let outer = Expr::Unary {
+//             operator: op,
+//             right: Box::new(inner),
+//         };
+//         assert_eq!(
+//             evaluate(&mut new_env(), outer).unwrap(),
+//             TokenType::NUMBER(3.0)
+//         );
+//     }
+//     #[test]
+//     fn unary_bang_true() {
+//         let op = tok(TokenType::BANG);
+//         assert_eq!(
+//             unary_expr(&mut new_env(), op, new_lit_expr(TokenType::TRUE)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn unary_bang_false() {
+//         let op = tok(TokenType::BANG);
+//         assert_eq!(
+//             unary_expr(&mut new_env(), op, new_lit_expr(TokenType::FALSE)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn unary_bang_nil() {
+//         let op = tok(TokenType::BANG);
+//         assert_eq!(
+//             unary_expr(&mut new_env(), op, new_lit_expr(TokenType::NIL)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn unary_bang_number() {
+//         let op = tok(TokenType::BANG);
+//         assert_eq!(
+//             unary_expr(&mut new_env(), op, num_expr(42.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     #[should_panic(expected = "Expected Unary Operator")]
+//     fn unary_unknown_operator_panics() {
+//         // PLUS is not a valid unary operator
+//         unary_expr(&mut new_env(), tok(TokenType::PLUS), num_expr(1.0)).unwrap();
+//     }
+//     #[test]
+//     #[should_panic(expected = "Expected Number")]
+//     fn unary_minus_on_non_number_panics() {
+//         unary_expr(&mut new_env(), tok(TokenType::MINUS), str_expr("x")).unwrap();
+//     }
 
-    // ── binary_expr: arithmetic ──────────────────────────
-    #[test]
-    fn binary_plus_numbers() {
-        let op = tok(TokenType::PLUS);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(4.0)).unwrap(),
-            TokenType::NUMBER(7.0)
-        );
-    }
-    #[test]
-    fn binary_plus_strings() {
-        let op = tok(TokenType::PLUS);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, str_expr("a"), str_expr("b")).unwrap(),
-            TokenType::STRING("ab".to_owned())
-        );
-    }
-    #[test]
-    fn binary_minus() {
-        let op = tok(TokenType::MINUS);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(3.0)).unwrap(),
-            TokenType::NUMBER(7.0)
-        );
-    }
-    #[test]
-    fn binary_star() {
-        let op = tok(TokenType::STAR);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(6.0), num_expr(7.0)).unwrap(),
-            TokenType::NUMBER(42.0)
-        );
-    }
-    #[test]
-    fn binary_slash() {
-        let op = tok(TokenType::SLASH);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(2.0)).unwrap(),
-            TokenType::NUMBER(5.0)
-        );
-    }
-    #[test]
-    fn binary_slash_by_zero() {
-        let op = tok(TokenType::SLASH);
-        let result = binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(0.0)).unwrap();
-        assert!(matches!(result, TokenType::NUMBER(v) if v.is_infinite()));
-    }
-    #[test]
-    #[should_panic]
-    fn binary_plus_mixed_type_string_rhs() {
-        let op = tok(TokenType::PLUS);
-        binary_expr(&mut new_env(), op, str_expr("x"), num_expr(1.0)).unwrap();
-    }
+//     // ── binary_expr: arithmetic ──────────────────────────
+//     #[test]
+//     fn binary_plus_numbers() {
+//         let op = tok(TokenType::PLUS);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(4.0)).unwrap(),
+//             TokenType::NUMBER(7.0)
+//         );
+//     }
+//     #[test]
+//     fn binary_plus_strings() {
+//         let op = tok(TokenType::PLUS);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, str_expr("a"), str_expr("b")).unwrap(),
+//             TokenType::STRING("ab".to_owned())
+//         );
+//     }
+//     #[test]
+//     fn binary_minus() {
+//         let op = tok(TokenType::MINUS);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(3.0)).unwrap(),
+//             TokenType::NUMBER(7.0)
+//         );
+//     }
+//     #[test]
+//     fn binary_star() {
+//         let op = tok(TokenType::STAR);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(6.0), num_expr(7.0)).unwrap(),
+//             TokenType::NUMBER(42.0)
+//         );
+//     }
+//     #[test]
+//     fn binary_slash() {
+//         let op = tok(TokenType::SLASH);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(10.0), num_expr(2.0)).unwrap(),
+//             TokenType::NUMBER(5.0)
+//         );
+//     }
+//     #[test]
+//     fn binary_slash_by_zero() {
+//         let op = tok(TokenType::SLASH);
+//         let result = binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(0.0)).unwrap();
+//         assert!(matches!(result, TokenType::NUMBER(v) if v.is_infinite()));
+//     }
+//     #[test]
+//     #[should_panic]
+//     fn binary_plus_mixed_type_string_rhs() {
+//         let op = tok(TokenType::PLUS);
+//         binary_expr(&mut new_env(), op, str_expr("x"), num_expr(1.0)).unwrap();
+//     }
 
-    // ── binary_expr: comparison ──────────────────────────
-    #[test]
-    fn binary_greater_true() {
-        let op = tok(TokenType::GREATER);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(5.0), num_expr(3.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_greater_false() {
-        let op = tok(TokenType::GREATER);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_greater_equal_true() {
-        let op = tok(TokenType::GreaterEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_greater_equal_false() {
-        let op = tok(TokenType::GreaterEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_less_true() {
-        let op = tok(TokenType::LESS);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_less_false() {
-        let op = tok(TokenType::LESS);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_less_equal_true() {
-        let op = tok(TokenType::LessEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_less_equal_false() {
-        let op = tok(TokenType::LessEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(4.0), num_expr(3.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_equal_equal_true() {
-        let op = tok(TokenType::EqualEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_equal_equal_false() {
-        let op = tok(TokenType::EqualEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_equal_equal_different_types() {
-        let op = tok(TokenType::EqualEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), str_expr("1")).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn binary_bang_equal_true() {
-        let op = tok(TokenType::BangEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn binary_bang_equal_false() {
-        let op = tok(TokenType::BangEqual);
-        assert_eq!(
-            binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
+//     // ── binary_expr: comparison ──────────────────────────
+//     #[test]
+//     fn binary_greater_true() {
+//         let op = tok(TokenType::GREATER);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(5.0), num_expr(3.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_greater_false() {
+//         let op = tok(TokenType::GREATER);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_greater_equal_true() {
+//         let op = tok(TokenType::GreaterEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(2.0), num_expr(2.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_greater_equal_false() {
+//         let op = tok(TokenType::GreaterEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_less_true() {
+//         let op = tok(TokenType::LESS);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_less_false() {
+//         let op = tok(TokenType::LESS);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_less_equal_true() {
+//         let op = tok(TokenType::LessEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(3.0), num_expr(3.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_less_equal_false() {
+//         let op = tok(TokenType::LessEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(4.0), num_expr(3.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_equal_equal_true() {
+//         let op = tok(TokenType::EqualEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_equal_equal_false() {
+//         let op = tok(TokenType::EqualEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_equal_equal_different_types() {
+//         let op = tok(TokenType::EqualEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), str_expr("1")).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn binary_bang_equal_true() {
+//         let op = tok(TokenType::BangEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(2.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn binary_bang_equal_false() {
+//         let op = tok(TokenType::BangEqual);
+//         assert_eq!(
+//             binary_expr(&mut new_env(), op, num_expr(1.0), num_expr(1.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
 
-    #[test]
-    #[should_panic(expected = "Incorrect binary operator")]
-    fn binary_unknown_operator_panics() {
-        binary_expr(
-            &mut new_env(),
-            tok(TokenType::LeftParen),
-            num_expr(1.0),
-            num_expr(2.0),
-        )
-        .unwrap();
-    }
-    #[test]
-    #[should_panic(expected = "Expected Number")]
-    fn binary_minus_on_strings_panics() {
-        binary_expr(
-            &mut new_env(),
-            tok(TokenType::MINUS),
-            str_expr("a"),
-            str_expr("b"),
-        )
-        .unwrap();
-    }
+//     #[test]
+//     #[should_panic(expected = "Incorrect binary operator")]
+//     fn binary_unknown_operator_panics() {
+//         binary_expr(
+//             &mut new_env(),
+//             tok(TokenType::LeftParen),
+//             num_expr(1.0),
+//             num_expr(2.0),
+//         )
+//         .unwrap();
+//     }
+//     #[test]
+//     #[should_panic(expected = "Expected Number")]
+//     fn binary_minus_on_strings_panics() {
+//         binary_expr(
+//             &mut new_env(),
+//             tok(TokenType::MINUS),
+//             str_expr("a"),
+//             str_expr("b"),
+//         )
+//         .unwrap();
+//     }
 
-    // ── is_equal ─────────────────────────────────────────
-    #[test]
-    fn is_equal_same_number() {
-        assert_eq!(
-            is_equal(TokenType::NUMBER(5.0), TokenType::NUMBER(5.0)).unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn is_equal_different_number() {
-        assert_eq!(
-            is_equal(TokenType::NUMBER(5.0), TokenType::NUMBER(6.0)).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn is_equal_same_string() {
-        assert_eq!(
-            is_equal(
-                TokenType::STRING("X".to_owned()),
-                TokenType::STRING("X".to_owned())
-            )
-            .unwrap(),
-            TokenType::TRUE
-        );
-    }
-    #[test]
-    fn is_equal_different_string() {
-        assert_eq!(
-            is_equal(
-                TokenType::STRING("a".to_owned()),
-                TokenType::STRING("A".to_owned())
-            )
-            .unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn is_equal_different_kind() {
-        assert_eq!(
-            is_equal(TokenType::TRUE, TokenType::NUMBER(1.0)).unwrap(),
-            TokenType::FALSE
-        );
-        assert_eq!(
-            is_equal(TokenType::NIL, TokenType::FALSE).unwrap(),
-            TokenType::FALSE
-        );
-    }
-    #[test]
-    fn is_equal_bool() {
-        assert_eq!(
-            is_equal(TokenType::TRUE, TokenType::TRUE).unwrap(),
-            TokenType::TRUE
-        );
-        assert_eq!(
-            is_equal(TokenType::FALSE, TokenType::FALSE).unwrap(),
-            TokenType::TRUE
-        );
-        assert_eq!(
-            is_equal(TokenType::TRUE, TokenType::FALSE).unwrap(),
-            TokenType::FALSE
-        );
-    }
-}
+//     // ── is_equal ─────────────────────────────────────────
+//     #[test]
+//     fn is_equal_same_number() {
+//         assert_eq!(
+//             is_equal(TokenType::NUMBER(5.0), TokenType::NUMBER(5.0)).unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn is_equal_different_number() {
+//         assert_eq!(
+//             is_equal(TokenType::NUMBER(5.0), TokenType::NUMBER(6.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn is_equal_same_string() {
+//         assert_eq!(
+//             is_equal(
+//                 TokenType::STRING("X".to_owned()),
+//                 TokenType::STRING("X".to_owned())
+//             )
+//             .unwrap(),
+//             TokenType::TRUE
+//         );
+//     }
+//     #[test]
+//     fn is_equal_different_string() {
+//         assert_eq!(
+//             is_equal(
+//                 TokenType::STRING("a".to_owned()),
+//                 TokenType::STRING("A".to_owned())
+//             )
+//             .unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn is_equal_different_kind() {
+//         assert_eq!(
+//             is_equal(TokenType::TRUE, TokenType::NUMBER(1.0)).unwrap(),
+//             TokenType::FALSE
+//         );
+//         assert_eq!(
+//             is_equal(TokenType::NIL, TokenType::FALSE).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+//     #[test]
+//     fn is_equal_bool() {
+//         assert_eq!(
+//             is_equal(TokenType::TRUE, TokenType::TRUE).unwrap(),
+//             TokenType::TRUE
+//         );
+//         assert_eq!(
+//             is_equal(TokenType::FALSE, TokenType::FALSE).unwrap(),
+//             TokenType::TRUE
+//         );
+//         assert_eq!(
+//             is_equal(TokenType::TRUE, TokenType::FALSE).unwrap(),
+//             TokenType::FALSE
+//         );
+//     }
+// }

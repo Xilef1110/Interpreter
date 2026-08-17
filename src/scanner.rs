@@ -13,7 +13,7 @@ pub struct Scanner<'a> {
     start: i32,
     current: i32,
     line: i32,
-    lox: &'a mut Lox<'a>,
+    lox: &'a Lox<'a>,
 }
 
 impl<'a> Scanner<'a> {
@@ -27,7 +27,7 @@ impl<'a> Scanner<'a> {
         return self.tokens.clone();
     }
 
-    pub fn new_scanner(source: String, lox: &'a mut Lox<'a>) -> Scanner<'a> {
+    pub fn new_scanner(source: String, lox: &'a Lox<'a>) -> Scanner<'a> {
         Scanner {
             source,
             tokens: vec![],
@@ -273,7 +273,7 @@ mod tests {
         assert_eq!("test".to_string(), scan.source);
         assert_eq!(0, scan.start);
         assert_eq!(0, scan.current);
-        assert_eq!(false, scan.lox.had_error);
+        assert_eq!(false, scan.lox.had_error.get());
         assert_eq!(0, scan.tokens.len());
     }
 

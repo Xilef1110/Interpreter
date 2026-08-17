@@ -1,6 +1,6 @@
 // use std::os::unix::fs;
 
-use std::cell::RefCell;
+use std::cell::Cell;
 use std::io::Write;
 use std::io::stdin;
 use std::io::stdout;
@@ -21,9 +21,9 @@ pub mod scanner;
 mod stmt;
 
 pub struct Lox<'a> {
-    had_error: bool,
-    had_runtime_error: bool,
-    env: Environment<'a>,
+    had_error: Cell<bool>,
+    had_runtime_error: Cell<bool>,
+    env: Box<Environment<'a>>,
 }
 
 fn main() {
@@ -42,9 +42,9 @@ fn main() {
 impl<'a> Lox<'a> {
     pub fn new_lox() -> Lox<'a> {
         Lox {
-            had_error: false,
-            had_runtime_error: false,
-            env: Environment::new_top_environment(),
+            had_error: Cell::new(false),
+            had_runtime_error: Cell::new(false),
+            env: Box::new(Environment::new()),
         }
     }
     fn run_file(&mut self, filepath: String) {
@@ -52,10 +52,10 @@ impl<'a> Lox<'a> {
         let contents = std::fs::read_to_string(filepath).expect("File should have opened");
         // println!("File contents:\n{contents}");
         self.run(contents);
-        if self.had_error {
+        if self.had_error.get() {
             std::process::exit(65)
         }
-        if self.had_runtime_error {
+        if self.had_runtime_error.get() {
             std::process::exit(75)
         }
     }
@@ -73,7 +73,7 @@ impl<'a> Lox<'a> {
                         continue;
                     }
                     self.run(input);
-                    self.had_error = false;
+                    self.had_error.set(false);
                 }
                 _ => {}
             }
@@ -84,13 +84,18 @@ impl<'a> Lox<'a> {
         println!("{}", input);
 
         // Scan input
-        let mut scanner: Scanner = scanner::Scanner::new_scanner(input, self);
-        let tokens = scanner.scan_tokens();
-        let mut parser = Parser::new_parser(tokens, self);
-        let statements = parser.parse();
-
+        let tokens;
+        {
+            let mut scanner = Box::new(scanner::Scanner::new_scanner(input, self));
+            tokens = scanner.scan_tokens();
+        }
+        let statements;
+        {
+            let mut parser = Parser::new_parser(tokens, self);
+            statements = parser.parse();
+        }
         // Stop if there was an error
-        if self.had_error {
+        if self.had_error.get() {
             return;
         }
 
@@ -98,11 +103,11 @@ impl<'a> Lox<'a> {
         interp::interpret(statements, self);
     }
 
-    pub fn scan_error(&mut self, line: i32, message: String) {
+    pub fn scan_error(&self, line: i32, message: String) {
         self.report(line, "".to_string(), message);
     }
 
-    pub fn parse_error(&mut self, tok: Token, message: String) {
+    pub fn parse_error(&self, tok: Token, message: String) {
         match tok.get_type() {
             TokenType::EOF => self.report(tok.get_line(), " at end".to_string(), message),
             _ => self.report(
@@ -117,13 +122,13 @@ impl<'a> Lox<'a> {
         self.runtime_report(message);
     }
 
-    fn report(&mut self, line: i32, loc: String, message: String) {
+    fn report(&self, line: i32, loc: String, message: String) {
         println!("[line {} ] Error {}: {}", line, loc, message);
-        self.had_error = true;
+        self.had_error.set(true);
     }
 
     fn runtime_report(&mut self, message: String) {
         println!("{}", message);
-        self.had_runtime_error = true;
+        self.had_runtime_error.set(true);
     }
 }

@@ -3,19 +3,19 @@ use anyhow::{Result, anyhow};
 use std::cell::RefCell;
 use std::collections::HashMap;
 #[derive(Clone)]
-pub struct Environment {
+pub struct Environment<'a> {
     map: RefCell<HashMap<String, TokenType>>,
-    enclosing: Option<Box<Environment>>,
+    enclosing: Option<&'a Box<Environment<'a>>>,
 }
 
-impl Environment {
-    pub fn new_top_environment() -> Environment {
+impl<'a> Environment<'a> {
+    pub fn new() -> Environment<'a> {
         Environment {
             map: RefCell::new(HashMap::new()),
             enclosing: Option::None,
         }
     }
-    pub fn new_environment(enclosing: Box<Environment>) -> Environment {
+    pub fn new_nested(enclosing: &'a Box<Environment<'a>>) -> Environment<'a> {
         Environment {
             map: RefCell::new(HashMap::new()),
             enclosing: Option::Some(enclosing),
