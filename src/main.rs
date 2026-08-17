@@ -1,5 +1,6 @@
 // use std::os::unix::fs;
 
+use std::cell::RefCell;
 use std::io::Write;
 use std::io::stdin;
 use std::io::stdout;
@@ -19,10 +20,10 @@ mod parser;
 pub mod scanner;
 mod stmt;
 
-pub struct Lox {
+pub struct Lox<'a> {
     had_error: bool,
     had_runtime_error: bool,
-    env: Environment,
+    env: Environment<'a>,
 }
 
 fn main() {
@@ -38,8 +39,8 @@ fn main() {
     }
 }
 
-impl Lox {
-    pub fn new_lox() -> Lox {
+impl<'a> Lox<'a> {
+    pub fn new_lox() -> Lox<'a> {
         Lox {
             had_error: false,
             had_runtime_error: false,

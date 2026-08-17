@@ -9,14 +9,14 @@ use anyhow::{Result, anyhow};
 pub struct Parser<'a> {
     tokens: Vec<Token>,
     current: i32,
-    lox: &'a mut Lox,
+    lox: &'a mut Lox<'a>,
 }
 
 /* Parser
     As part of parsing, the Token is converted to TokenType
 */
 impl<'a> Parser<'a> {
-    pub fn new_parser(tokens: Vec<Token>, lox: &'a mut Lox) -> Parser<'a> {
+    pub fn new_parser(tokens: Vec<Token>, lox: &'a mut Lox<'a>) -> Parser<'a> {
         Parser {
             tokens,
             current: 0,
@@ -68,10 +68,24 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt> {
-        if self.match_types(vec![TokenType::PRINT]) {
-            return self.print_statement();
+        match self.advance().get_type() {
+            TokenType::PRINT => self.print_statement(),
+            TokenType::LeftBrace => Ok(Stmt::Block(self.block_statement()?)),
+            _ => self.expr_statement(),
         }
-        self.expr_statement()
+        // if self.match_types(vec![TokenType::PRINT]) {
+        //     return self.print_statement();
+        // }
+        // self.expr_statement()
+    }
+
+    fn block_statement(&mut self) -> Result<Vec<Stmt>> {
+        let mut statements: Vec<Stmt> = vec![];
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration());
+        }
+        self.consume(TokenType::RightBrace, "Expect '}' after block.")?;
+        Ok(statements)
     }
 
     fn expr_statement(&mut self) -> Result<Stmt> {

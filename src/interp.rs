@@ -13,7 +13,7 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
         }
     }
 }
-fn evaluate(env: &mut Environment, ex: Expr) -> Result<TokenType> {
+fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
     match ex {
         Expr::Literal { value } => Ok(lit_expr(value)),
         Expr::Grouping(inside) => group_expr(env, *inside),
@@ -30,8 +30,9 @@ fn evaluate(env: &mut Environment, ex: Expr) -> Result<TokenType> {
     }
 }
 
-fn execute(env: &mut Environment, stmt: Stmt) -> Result<TokenType> {
+fn execute<'a>(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
     match stmt {
+        Stmt::Block(statements) => block_execute(statements, env),
         Stmt::Expr(expr) => expr_stmt(env, expr),
         Stmt::Print(value) => print_stmt(env, value),
         Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
@@ -39,18 +40,26 @@ fn execute(env: &mut Environment, stmt: Stmt) -> Result<TokenType> {
     }
 }
 
-fn expr_stmt(env: &mut Environment, expr: Expr) -> Result<TokenType> {
+fn block_execute(statements: Vec<Stmt>, prev: Box<Environment>) -> Result<TokenType> {
+    // prev: Environment = env,
+    let mut new: Box<Environment> = Box::new(Environment::new_environment(prev));
+    for stmt in statements {
+        execute(new, stmt)?;
+    }
+    Ok(TokenType::NIL)
+}
+fn expr_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
     evaluate(env, expr)?;
     return Ok(TokenType::NIL);
 }
 
-fn print_stmt(env: &mut Environment, expr: Expr) -> Result<TokenType> {
+fn print_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
     let value: TokenType = evaluate(env, expr)?;
     print!("{}", value.stringify());
     return Ok(TokenType::NIL);
 }
 
-fn var_stmt(env: &mut Environment, name: Token, initializer: Expr) -> Result<TokenType> {
+fn var_stmt(env: &Box<Environment>, name: Token, initializer: Expr) -> Result<TokenType> {
     let mut value = TokenType::NIL;
     if initializer != Expr::Null {
         value = evaluate(env, initializer)?
@@ -64,11 +73,11 @@ fn lit_expr(lit: Token) -> TokenType {
     lit.get_type()
 }
 
-fn group_expr(env: &mut Environment, inside: Expr) -> Result<TokenType> {
+fn group_expr(env: &Box<Environment>, inside: Expr) -> Result<TokenType> {
     Ok(evaluate(env, inside)?)
 }
 
-fn unary_expr(env: &mut Environment, operator: Token, ex: Expr) -> Result<TokenType> {
+fn unary_expr(env: &Box<Environment>, operator: Token, ex: Expr) -> Result<TokenType> {
     let right = evaluate(env, ex)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
@@ -78,7 +87,7 @@ fn unary_expr(env: &mut Environment, operator: Token, ex: Expr) -> Result<TokenT
     }
 }
 
-fn binary_expr(env: &mut Environment, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
+fn binary_expr(env: &Box<Environment>, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
     let left: TokenType = evaluate(env, l)?;
     let right: TokenType = evaluate(env, r)?;
     let line: i32 = operator.get_line();
@@ -117,11 +126,11 @@ fn binary_expr(env: &mut Environment, operator: Token, l: Expr, r: Expr) -> Resu
     }
 }
 
-fn var_expr(env: &Environment, tok: Token) -> Result<TokenType> {
+fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
     env.get(tok)
 }
 
-fn assign_expr(env: &mut Environment, name: Token, expr: Expr) -> Result<TokenType> {
+fn assign_expr(env: &Box<Environment>, name: Token, expr: Expr) -> Result<TokenType> {
     let value = evaluate(env, expr)?;
     if env.assign(name.get_lexeme(), value.clone()) {
         return Ok(value);
@@ -204,7 +213,7 @@ mod tests {
     // use crate::scanner::token::Token;
 
     // ── Helpers ──────────────────────────────────────────
-    fn new_env() -> Environment {
+    fn new_env() -> Environment<'a> {
         Environment::new_top_environment()
     }
     fn num_tok(n: f64) -> Token {

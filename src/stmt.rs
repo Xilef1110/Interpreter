@@ -2,7 +2,7 @@ use crate::Token;
 use crate::expr::Expr;
 
 pub enum Stmt {
-    Block,
+    Block(Vec<Stmt>),
     Class,
     Expr(Expr),
     Func,

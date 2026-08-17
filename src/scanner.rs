@@ -13,7 +13,7 @@ pub struct Scanner<'a> {
     start: i32,
     current: i32,
     line: i32,
-    lox: &'a mut Lox,
+    lox: &'a mut Lox<'a>,
 }
 
 impl<'a> Scanner<'a> {
@@ -27,7 +27,7 @@ impl<'a> Scanner<'a> {
         return self.tokens.clone();
     }
 
-    pub fn new_scanner(source: String, lox: &'a mut Lox) -> Scanner<'a> {
+    pub fn new_scanner(source: String, lox: &'a mut Lox<'a>) -> Scanner<'a> {
         Scanner {
             source,
             tokens: vec![],
