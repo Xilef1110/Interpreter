@@ -16,7 +16,7 @@ pub struct Parser<'a> {
     As part of parsing, the Token is converted to TokenType
 */
 impl<'a> Parser<'a> {
-    pub fn new_parser(tokens: Vec<Token>, lox: &'a mut Lox<'a>) -> Parser<'a> {
+    pub fn new_parser(tokens: Vec<Token>, lox: &'a Lox<'a>) -> Parser<'a> {
         Parser {
             tokens,
             current: 0,

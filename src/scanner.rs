@@ -40,6 +40,7 @@ impl<'a> Scanner<'a> {
 
     pub fn scan_token(&mut self) {
         let c: &str = self.advance();
+        let char: String = c.to_string();
         let mut double = false;
         match c {
             "(" => self.add_token(TokenType::LeftParen),
@@ -86,9 +87,9 @@ impl<'a> Scanner<'a> {
                 }
             }
             " " => (),
-            "/r" => (),
-            "/t" => (),
-            "/n" => self.line += 1,
+            "\r" => (),
+            "\t" => (),
+            "\n" => self.line += 1,
             "\"" => self.string(),
             _ => {
                 if is_digit(c) {
@@ -97,7 +98,7 @@ impl<'a> Scanner<'a> {
                     self.identifier();
                 } else {
                     self.lox
-                        .scan_error(self.line, "Unexpected character".to_string())
+                        .scan_error(self.line, format!("Unexpected character '{}' found", char))
                 }
             }
         }

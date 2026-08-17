@@ -43,8 +43,6 @@ fn execute(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
 }
 
 fn block_execute(statements: Vec<Stmt>, new: Box<Environment>) -> Result<TokenType> {
-    // prev: Environment = env,
-    // let mut new: Box<Environment> = Box::new(Environment::new_nested(prev));
     for stmt in statements {
         execute(&new, stmt)?;
     }

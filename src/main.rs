@@ -33,7 +33,7 @@ fn main() {
         print!("To many arguments");
         process::exit(63);
     } else if arglength == 2 {
-        interp.run_file(std::env::args().nth(0).expect("no file given"));
+        interp.run_file(std::env::args().nth(1).expect("no file given"));
     } else {
         interp.run_prompt();
     }
