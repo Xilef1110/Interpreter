@@ -69,6 +69,7 @@ impl<'a> Parser<'a> {
 
     fn statement(&mut self) -> Result<Stmt> {
         match self.advance().get_type() {
+            TokenType::FOR => self.for_statement(),
             TokenType::IF => self.if_statement(),
             TokenType::PRINT => self.print_statement(),
             TokenType::WHILE => self.while_statement(),
@@ -79,6 +80,51 @@ impl<'a> Parser<'a> {
         //     return self.print_statement();
         // }
         // self.expr_statement()
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.")?;
+
+        let initializer: Stmt;
+        if self.match_single(TokenType::SEMICOLON) {
+            initializer = Stmt::None;
+        } else if self.match_single(TokenType::VAR) {
+            initializer = self.var_declaration()?;
+        } else {
+            initializer = self.expr_statement()?;
+        }
+
+        let condition: Expr;
+        if !self.check(TokenType::SEMICOLON) {
+            condition = self.expression()?;
+        } else {
+            let tok: Token = self.peek_tok();
+            condition = Expr::Literal {
+                value: Token::new_token(TokenType::TRUE, tok.get_lexeme(), tok.get_line()),
+            };
+        }
+        self.consume(TokenType::SEMICOLON, "Expect ';' after loop condition.")?;
+
+        let increment: Expr;
+        if !self.check(TokenType::RightParen) {
+            increment = self.expression()?;
+        } else {
+            increment = Expr::Null;
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+        let mut body: Stmt = self.statement()?;
+
+        if increment != Expr::Null {
+            body = Stmt::Block(vec![body, Stmt::Expr(increment)])
+        }
+        body = Stmt::While(condition, Box::new(body));
+
+        if initializer != Stmt::None {
+            body = Stmt::Block(vec![initializer, body])
+        }
+
+        Ok(body)
     }
 
     fn block_statement(&mut self) -> Result<Vec<Stmt>> {
@@ -308,6 +354,13 @@ impl<'a> Parser<'a> {
                 self.advance();
                 return true;
             }
+        }
+        false
+    }
+    fn match_single(&mut self, ttype: TokenType) -> bool {
+        if self.check(ttype) {
+            self.advance();
+            return true;
         }
         false
     }

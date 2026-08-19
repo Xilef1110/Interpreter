@@ -111,11 +111,11 @@ fn logical_expr(
 ) -> Result<TokenType> {
     let left: TokenType = evaluate(env, eleft)?;
     if operator.get_type() == TokenType::OR {
-        if convert_bool(is_truthy(left.clone())) {
+        if convert_bool(left.clone()) {
             return Ok(left);
         }
     } else {
-        if !convert_bool(is_truthy(left.clone())) {
+        if !convert_bool(left.clone()) {
             return Ok(left);
         }
     }
@@ -131,7 +131,7 @@ fn unary_expr(env: &Box<Environment>, operator: Token, ex: Expr) -> Result<Token
     let line: i32 = operator.get_line();
     match operator.get_type() {
         TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
-        TokenType::BANG => negation(is_truthy(right), line),
+        // TokenType::BANG => negation(is_truthy(right), line),
         _ => Err(anyhow!("Expected Unary Operator: line {}", line)),
     }
 }
