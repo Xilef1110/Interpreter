@@ -36,6 +36,11 @@ fn execute(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
             block_execute(statements, Box::new(Environment::new_nested(env)))
         }
         Stmt::Expr(expr) => expr_stmt(env, expr),
+        Stmt::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => if_stmt(env, condition, *then_branch, *else_branch),
         Stmt::Print(value) => print_stmt(env, value),
         Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
         _ => Ok(TokenType::NIL),
@@ -51,6 +56,19 @@ fn block_execute(statements: Vec<Stmt>, new: Box<Environment>) -> Result<TokenTy
 fn expr_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
     evaluate(env, expr)?;
     return Ok(TokenType::NIL);
+}
+fn if_stmt(
+    env: &Box<Environment>,
+    condition: Expr,
+    then_branch: Stmt,
+    else_branch: Stmt,
+) -> Result<TokenType> {
+    if convert_bool(is_truthy(evaluate(env, condition)?)) {
+        execute(env, then_branch)?;
+    } else if else_branch != Stmt::None {
+        execute(env, else_branch)?;
+    }
+    Ok(TokenType::NIL)
 }
 
 fn print_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
@@ -203,6 +221,15 @@ fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
         Ok(str)
     } else {
         Err(anyhow!("Expected String: {} ", line))
+    }
+}
+
+// Only use this on the result of is_truthy()
+fn convert_bool(ttype: TokenType) -> bool {
+    match ttype {
+        TokenType::TRUE => true,
+        TokenType::FALSE => false,
+        _ => panic!("Internal: expected boolean"), // Should never run
     }
 }
 

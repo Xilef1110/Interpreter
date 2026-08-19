@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
             Ok(stmt) => stmt,
             Err(_err) => {
                 self.synchronize();
-                return Stmt::Error;
+                return Stmt::None;
             }
         }
     }
@@ -69,6 +69,7 @@ impl<'a> Parser<'a> {
 
     fn statement(&mut self) -> Result<Stmt> {
         match self.advance().get_type() {
+            TokenType::IF => self.if_statement(),
             TokenType::PRINT => self.print_statement(),
             TokenType::LeftBrace => Ok(Stmt::Block(self.block_statement()?)),
             _ => self.expr_statement(),
@@ -98,6 +99,22 @@ impl<'a> Parser<'a> {
         };
         self.consume(TokenType::SEMICOLON, "Expect ';' after expr.")?;
         Ok(Stmt::Expr(expr))
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.)")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition.")?;
+        let then_branch = Box::new(self.statement()?);
+        let mut else_branch: Box<Stmt> = Box::new(Stmt::None);
+        if self.match_types(vec![TokenType::ELSE]) {
+            *else_branch = self.statement()?;
+        }
+        Ok(Stmt::If {
+            condition,
+            then_branch,
+            else_branch,
+        })
     }
 
     fn print_statement(&mut self) -> Result<Stmt> {
