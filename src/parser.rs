@@ -134,7 +134,7 @@ impl<'a> Parser<'a> {
     }
 
     fn assignment(&mut self) -> Result<Expr> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         if self.match_types(vec![TokenType::EQUAL]) {
             let equals: Token = self.previous();
             let value = self.assignment()?;
@@ -148,6 +148,34 @@ impl<'a> Parser<'a> {
             if let Err(_err) = self.error(equals, "Invalid assignment target.") {
                 // Since the Parser is not in a confused state, there is no need to synchronize
             }
+        }
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr> {
+        let mut expr: Expr = self.and()?;
+        while self.match_types(vec![TokenType::OR]) {
+            let operator: Token = self.previous();
+            let right: Box<Expr> = Box::new(self.and()?);
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right,
+            }
+        }
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr> {
+        let mut expr: Expr = self.equality()?;
+        while self.match_types(vec![TokenType::AND]) {
+            let operator: Token = self.previous();
+            let right = Box::new(self.equality()?);
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right,
+            };
         }
         Ok(expr)
     }

@@ -16,6 +16,11 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
 fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
     match ex {
         Expr::Literal { value } => Ok(lit_expr(value)),
+        Expr::Logical {
+            left,
+            operator,
+            right,
+        } => logical_expr(env, *left, *right, operator),
         Expr::Grouping(inside) => group_expr(env, *inside),
         Expr::Unary { operator, right } => unary_expr(env, operator, *right),
         Expr::Binary {
@@ -25,7 +30,7 @@ fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
         } => binary_expr(env, operator, *left, *right),
         Expr::Variable(tok) => var_expr(env, tok),
         Expr::Assign { name, value } => assign_expr(env, name, *value),
-        Expr::Error => panic!("evaluate error branch"), // TODO: handle this case
+        Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
 }
@@ -86,9 +91,27 @@ fn var_stmt(env: &Box<Environment>, name: Token, initializer: Expr) -> Result<To
     Ok(TokenType::NIL)
 }
 
-// Helpers for each expression type
 fn lit_expr(lit: Token) -> TokenType {
     lit.get_type()
+}
+
+fn logical_expr(
+    env: &Box<Environment>,
+    eleft: Expr,
+    eright: Expr,
+    operator: Token,
+) -> Result<TokenType> {
+    let left: TokenType = evaluate(env, eleft)?;
+    if operator.get_type() == TokenType::OR {
+        if convert_bool(is_truthy(left.clone())) {
+            return Ok(left);
+        }
+    } else {
+        if !convert_bool(is_truthy(left.clone())) {
+            return Ok(left);
+        }
+    }
+    evaluate(env, eright)
 }
 
 fn group_expr(env: &Box<Environment>, inside: Expr) -> Result<TokenType> {
