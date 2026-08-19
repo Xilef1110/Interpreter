@@ -48,6 +48,7 @@ fn execute(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
         } => if_stmt(env, condition, *then_branch, *else_branch),
         Stmt::Print(value) => print_stmt(env, value),
         Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
+        Stmt::While(condition, body) => while_stmt(env, condition, *body),
         _ => Ok(TokenType::NIL),
     }
 }
@@ -68,7 +69,7 @@ fn if_stmt(
     then_branch: Stmt,
     else_branch: Stmt,
 ) -> Result<TokenType> {
-    if convert_bool(is_truthy(evaluate(env, condition)?)) {
+    if convert_bool(evaluate(env, condition)?) {
         execute(env, then_branch)?;
     } else if else_branch != Stmt::None {
         execute(env, else_branch)?;
@@ -88,6 +89,13 @@ fn var_stmt(env: &Box<Environment>, name: Token, initializer: Expr) -> Result<To
         value = evaluate(env, initializer)?
     }
     env.define(name.get_lexeme(), value);
+    Ok(TokenType::NIL)
+}
+
+fn while_stmt(env: &Box<Environment>, condition: Expr, body: Stmt) -> Result<TokenType> {
+    while convert_bool(evaluate(env, condition.clone())?) {
+        execute(env, body.clone())?;
+    }
     Ok(TokenType::NIL)
 }
 
@@ -187,6 +195,12 @@ fn is_truthy(ttype: TokenType) -> TokenType {
         _ => TokenType::TRUE,
     }
 }
+fn convert_bool(ttype: TokenType) -> bool {
+    match is_truthy(ttype) {
+        TokenType::TRUE => true,
+        _ => false,
+    }
+}
 fn negation(ttype: TokenType, line: i32) -> Result<TokenType> {
     if let TokenType::TRUE = ttype {
         Ok(TokenType::FALSE)
@@ -244,15 +258,6 @@ fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
         Ok(str)
     } else {
         Err(anyhow!("Expected String: {} ", line))
-    }
-}
-
-// Only use this on the result of is_truthy()
-fn convert_bool(ttype: TokenType) -> bool {
-    match ttype {
-        TokenType::TRUE => true,
-        TokenType::FALSE => false,
-        _ => panic!("Internal: expected boolean"), // Should never run
     }
 }
 

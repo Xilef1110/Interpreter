@@ -71,6 +71,7 @@ impl<'a> Parser<'a> {
         match self.advance().get_type() {
             TokenType::IF => self.if_statement(),
             TokenType::PRINT => self.print_statement(),
+            TokenType::WHILE => self.while_statement(),
             TokenType::LeftBrace => Ok(Stmt::Block(self.block_statement()?)),
             _ => self.expr_statement(),
         }
@@ -127,6 +128,15 @@ impl<'a> Parser<'a> {
         };
         self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
         Ok(Stmt::Print(value))
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'.")?;
+        let condition: Expr = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after condition.")?;
+        let body: Box<Stmt> = Box::new(self.statement()?);
+
+        Ok(Stmt::While(condition, body))
     }
 
     fn expression(&mut self) -> Result<Expr> {

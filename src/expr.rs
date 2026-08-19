@@ -1,6 +1,6 @@
 // use crate::scanner::TokenType;
 use crate::scanner::token::Token;
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Expr {
     Assign {
         name: Token,

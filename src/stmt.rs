@@ -1,7 +1,7 @@
 use crate::Token;
 use crate::expr::Expr;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Stmt {
     Block(Vec<Stmt>),
     Class,
@@ -18,6 +18,6 @@ pub enum Stmt {
         name: Token,
         initializer: Expr,
     },
-    While,
+    While(Expr, Box<Stmt>),
     None,
 }
