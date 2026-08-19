@@ -9,7 +9,6 @@ use std::process;
 use crate::environment::Environment;
 // use crate::expr;
 use crate::parser::Parser;
-use crate::scanner::Scanner;
 use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 
@@ -88,6 +87,7 @@ impl<'a> Lox<'a> {
         {
             let mut scanner = Box::new(scanner::Scanner::new_scanner(input, self));
             tokens = scanner.scan_tokens();
+            dbg!(tokens.clone());
         }
         let statements;
         {

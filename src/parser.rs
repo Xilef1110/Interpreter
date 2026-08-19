@@ -191,7 +191,10 @@ impl<'a> Parser<'a> {
 
     fn assignment(&mut self) -> Result<Expr> {
         let expr = self.or()?;
-        if self.match_types(vec![TokenType::EQUAL]) {
+        dbg!(expr.clone());
+        dbg!(self.peek());
+        if self.match_single(TokenType::EQUAL) {
+            println!("Assignment is happening");
             let equals: Token = self.previous();
             let value = self.assignment()?;
             if let Expr::Variable(tok) = expr {
@@ -310,22 +313,40 @@ impl<'a> Parser<'a> {
     }
 
     fn primary(&mut self) -> Result<Expr> {
-        let next = self.advance();
-        let line = next.get_line();
+        let next: Token = self.peek_tok();
         match next.get_type() {
             TokenType::LeftParen => {
-                // TODO!!!
+                self.advance();
                 let expr = self.expression()?;
                 self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
                 return Ok(Expr::Grouping(Box::new(expr)));
             }
             TokenType::FALSE | TokenType::TRUE | TokenType::NIL => {
+                self.advance();
                 return Ok(Expr::Literal { value: next });
             }
-            TokenType::NUMBER(_n) => Ok(Expr::Literal { value: next }),
-            TokenType::STRING(_str) => Ok(Expr::Literal { value: next }),
-            TokenType::IDENTIFIER => Ok(Expr::Variable(self.previous())),
+            TokenType::NUMBER(_n) => {
+                self.advance();
+                Ok(Expr::Literal { value: next })
+            }
+            TokenType::STRING(_str) => {
+                self.advance();
+                Ok(Expr::Literal { value: next })
+            }
+            TokenType::IDENTIFIER => {
+                self.advance();
+                dbg!(next);
+                dbg!(self.previous());
+                Ok(Expr::Variable(self.previous()))
+            }
+            TokenType::EQUAL => {
+                // self.advance();
+                Ok(Expr::Variable(self.previous()))
+            }
             _ => {
+                // dbg!(next.clone());
+                // dbg!(self.previous());
+                let line = next.get_line();
                 self.lox.parse_error(next, "Expect Expression".to_string());
                 Err(anyhow! {"Expect Expression: line {}", line})
             }
