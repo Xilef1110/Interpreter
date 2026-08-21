@@ -1,3 +1,5 @@
+use std::path::Component::ParentDir;
+
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
@@ -28,6 +30,7 @@ fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
             operator,
             right,
         } => binary_expr(env, operator, *left, *right),
+        Expr::Call(callee, paren, arguments) => call_expr(env, *callee, paren, arguments),
         Expr::Variable(tok) => var_expr(env, tok),
         Expr::Assign { name, value } => assign_expr(env, name, *value),
         Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
@@ -173,6 +176,21 @@ fn binary_expr(env: &Box<Environment>, operator: Token, l: Expr, r: Expr) -> Res
         }
         _ => Err(anyhow!("Incorrect binary operator: {}", line)),
     }
+}
+
+fn call_expr(
+    env: &Box<Environment>,
+    callee: Expr,
+    paren: Token,
+    arguments: Vec<Expr>,
+) -> Result<TokenType> {
+    let ttcallee = evaluate(env, callee)?;
+    let mut ttarguments: Vec<TokenType> = vec![];
+    for arg in arguments {
+        ttarguments.push(evaluate(env, arg)?);
+    }
+
+    Ok(TokenType::NIL)
 }
 
 fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {

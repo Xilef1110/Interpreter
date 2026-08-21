@@ -1,4 +1,3 @@
-// use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 #[derive(PartialEq, Clone, Debug)]
 pub enum Expr {
@@ -11,7 +10,7 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    Call,
+    Call(Box<Expr>, Token, Vec<Expr>),
     Get,
     Grouping(Box<Expr>),
     Literal {

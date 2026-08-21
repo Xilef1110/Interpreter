@@ -191,10 +191,10 @@ impl<'a> Parser<'a> {
 
     fn assignment(&mut self) -> Result<Expr> {
         let expr = self.or()?;
-        dbg!(expr.clone());
-        dbg!(self.peek());
+        // dbg!(expr.clone());
+        // dbg!(self.peek());
         if self.match_single(TokenType::EQUAL) {
-            println!("Assignment is happening");
+            // println!("Assignment is happening");
             let equals: Token = self.previous();
             let value = self.assignment()?;
             if let Expr::Variable(tok) = expr {
@@ -309,7 +309,20 @@ impl<'a> Parser<'a> {
                 right: Box::new(right),
             });
         }
-        self.primary()
+        self.call()
+    }
+
+    fn call(&mut self) -> Result<Expr> {
+        let mut expr: Expr = self.primary()?;
+
+        loop {
+            if self.match_single(TokenType::LeftParen) {
+                expr = finish_call(expr);
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
     }
 
     fn primary(&mut self) -> Result<Expr> {
@@ -335,8 +348,8 @@ impl<'a> Parser<'a> {
             }
             TokenType::IDENTIFIER => {
                 self.advance();
-                dbg!(next);
-                dbg!(self.previous());
+                // dbg!(next);
+                // dbg!(self.previous());
                 Ok(Expr::Variable(self.previous()))
             }
             TokenType::EQUAL => {
@@ -414,6 +427,25 @@ impl<'a> Parser<'a> {
         let i: usize = (self.current - 1) as usize;
         let tok = self.tokens[i].clone();
         tok
+    }
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr> {
+        let mut arguments: Vec<Expr> = vec![];
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    self.error(self.peek_tok(), "Can't have more than 255 arguments.");
+                    // No need to panice. While the code doesn't match the grammer, the parser is still in a valid state.
+                }
+                arguments.push(self.expression()?);
+                if self.check(TokenType::COMMA) {
+                    continue;
+                }
+                break;
+            }
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after arguments.");
+        let paren: Token = self.previous();
+        Ok(Expr::Call(Box::new(callee), paren, arguments))
     }
 
     // Error Handling
