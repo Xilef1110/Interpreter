@@ -39,11 +39,21 @@ impl<'a> Parser<'a> {
     fn declaration(&mut self) -> Stmt {
         let statement: Result<Stmt>;
         // panic!("declaration");
-        if self.match_types(vec![TokenType::VAR]) {
-            statement = self.var_declaration();
-        } else {
-            statement = self.statement()
+        match self.safe_peek() {
+            TokenType::FUN => {
+                self.advance();
+                statement = self.fun_statement("function");
+            }
+            TokenType::VAR => {
+                self.advance();
+                statement = self.var_declaration();
+            }
+            _ => {
+                self.advance();
+                statement = self.statement();
+            }
         }
+        // TODO: Handle an incorrect TokenType
         // Catch Errors
         match statement {
             Ok(stmt) => stmt,
@@ -146,6 +156,40 @@ impl<'a> Parser<'a> {
         };
         self.consume(TokenType::SEMICOLON, "Expect ';' after expr.")?;
         Ok(Stmt::Expr(expr))
+    }
+
+    fn fun_statement(&mut self, kind: &str) -> Result<Stmt> {
+        let name: Token =
+            self.tok_consume(TokenType::IDENTIFIER, &format!("Expect {} name", kind))?;
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expect '(' after {} name.", kind),
+        )?;
+
+        let mut parameters: Vec<Token> = vec![];
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    self.error(self.peek_tok(), "Can't have more than 255 parameters.");
+                }
+                parameters.push(self.tok_consume(TokenType::IDENTIFIER, "Expect parameter name.")?);
+                if !self.match_single(TokenType::COMMA) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.");
+
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expect 'Opening Brace' before {} body", kind),
+        );
+        let body: Vec<Stmt> = self.block_statement()?;
+        Ok(Stmt::Func {
+            name,
+            params: parameters,
+            body,
+        })
     }
 
     fn if_statement(&mut self) -> Result<Stmt> {
@@ -317,7 +361,7 @@ impl<'a> Parser<'a> {
 
         loop {
             if self.match_single(TokenType::LeftParen) {
-                expr = finish_call(expr);
+                expr = self.finish_call(expr);
             } else {
                 break;
             }
@@ -417,6 +461,13 @@ impl<'a> Parser<'a> {
         let i: usize = self.current as usize;
         let tok = self.tokens[i].clone();
         tok.get_type()
+    }
+    fn safe_peek(&self) -> TokenType {
+        if self.is_at_end() {
+            return TokenType::NIL;
+        } else {
+            return self.peek();
+        }
     }
     fn peek_tok(&self) -> Token {
         let i: usize = self.current as usize;

@@ -1,23 +1,32 @@
 use crate::Environment;
+use crate::Token;
 use crate::TokenType;
+use crate::stmt::Stmt;
 
 pub trait Callable {
     fn arity(&self) -> i32;
-    fn call(&self) -> TokenType;
+    fn call(&self, environment: &Box<Environment>, arguments: Vec<TokenType>) -> TokenType;
 }
 
-struct LoxFunction<'a> {
-    ttype: TokenType,
-    arguments: Vec<TokenType>,
-    env: &'a Box<Environment<'a>>,
+struct LoxFunction {
+    name: Token,
+    params: Vec<Token>,
+    body: Vec<Stmt>,
+    // arguments: Vec<TokenType>,
 }
 
-impl<'a> Callable for LoxFunction<'a> {
+impl LoxFunction {
+    fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
+        LoxFunction { name, params, body }
+    }
+}
+
+impl Callable for LoxFunction {
     fn arity(&self) -> i32 {
-        return self.arguments.len() as i32;
+        return self.params.len() as i32;
     }
 
-    fn call(&self) -> TokenType {
+    fn call(&self, env: &Box<Environment>, arguments: Vec<TokenType>) -> TokenType {
         TokenType::NIL
         // TODO
     }
