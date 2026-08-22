@@ -2,7 +2,7 @@ use crate::{Token, TokenType};
 use anyhow::{Result, anyhow};
 use std::cell::RefCell;
 use std::collections::HashMap;
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Environment<'a> {
     map: RefCell<HashMap<String, TokenType>>,
     enclosing: Option<&'a Box<Environment<'a>>>,
@@ -48,5 +48,9 @@ impl<'a> Environment<'a> {
             Option::Some(env) => env.assign(name, value),
             Option::None => false,
         }
+    }
+
+    pub fn get_enclosing(&self) -> Option<&'a Box<Environment<'a>>> {
+        self.enclosing
     }
 }

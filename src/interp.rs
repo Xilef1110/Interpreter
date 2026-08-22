@@ -1,11 +1,10 @@
-use std::path::Component::ParentDir;
-
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     // let mut env = Environment::new_environment();
+    assert!(lox.env.get_enclosing() == None);
     for stmt in statements {
         match execute(&lox.env, stmt) {
             Ok(_ttype) => {} // Do Nothing
