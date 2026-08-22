@@ -19,6 +19,10 @@ impl LoxFunction {
     fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
         LoxFunction { name, params, body }
     }
+
+    fn to_strint(&self) -> String {
+        format!("<fn {}>", self.name.get_lexeme())
+    }
 }
 
 impl Callable for LoxFunction {
