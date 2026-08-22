@@ -4,9 +4,11 @@ use anyhow::{Result, anyhow};
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     // let mut env = Environment::new_environment();
+
+    // Lox should always have the top level (global) scope
     assert!(lox.env.get_enclosing() == None);
     for stmt in statements {
-        match execute(&lox.env, stmt) {
+        match execute(&lox.env, &lox.env, stmt) {
             Ok(_ttype) => {} // Do Nothing
             Err(err) => {
                 lox.runtime_error(err.to_string());
@@ -14,89 +16,104 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
         }
     }
 }
-fn evaluate(env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
+fn evaluate(global: &Box<Environment>, env: &Box<Environment>, ex: Expr) -> Result<TokenType> {
     match ex {
         Expr::Literal { value } => Ok(lit_expr(value)),
         Expr::Logical {
             left,
             operator,
             right,
-        } => logical_expr(env, *left, *right, operator),
-        Expr::Grouping(inside) => group_expr(env, *inside),
-        Expr::Unary { operator, right } => unary_expr(env, operator, *right),
+        } => logical_expr(global, env, *left, *right, operator),
+        Expr::Grouping(inside) => group_expr(global, env, *inside),
+        Expr::Unary { operator, right } => unary_expr(global, env, operator, *right),
         Expr::Binary {
             left,
             operator,
             right,
-        } => binary_expr(env, operator, *left, *right),
-        Expr::Call(callee, paren, arguments) => call_expr(env, *callee, paren, arguments),
+        } => binary_expr(global, env, operator, *left, *right),
+        Expr::Call(callee, paren, arguments) => call_expr(global, env, *callee, paren, arguments),
         Expr::Variable(tok) => var_expr(env, tok),
-        Expr::Assign { name, value } => assign_expr(env, name, *value),
+        Expr::Assign { name, value } => assign_expr(global, env, name, *value),
         Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
         _ => Ok(TokenType::NIL),
     }
 }
 
-fn execute(env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
+fn execute(global: &Box<Environment>, env: &Box<Environment>, stmt: Stmt) -> Result<TokenType> {
     match stmt {
         Stmt::Block(statements) => {
-            block_execute(statements, Box::new(Environment::new_nested(env)))
+            block_execute(global, statements, Box::new(Environment::new_nested(env)))
         }
-        Stmt::Expr(expr) => expr_stmt(env, expr),
+        Stmt::Expr(expr) => expr_stmt(global, env, expr),
         Stmt::If {
             condition,
             then_branch,
             else_branch,
-        } => if_stmt(env, condition, *then_branch, *else_branch),
-        Stmt::Print(value) => print_stmt(env, value),
-        Stmt::Var { name, initializer } => var_stmt(env, name, initializer),
-        Stmt::While(condition, body) => while_stmt(env, condition, *body),
+        } => if_stmt(global, env, condition, *then_branch, *else_branch),
+        Stmt::Print(value) => print_stmt(global, env, value),
+        Stmt::Var { name, initializer } => var_stmt(global, env, name, initializer),
+        Stmt::While(condition, body) => while_stmt(global, env, condition, *body),
         _ => Ok(TokenType::NIL),
     }
 }
 
-fn block_execute(statements: Vec<Stmt>, new: Box<Environment>) -> Result<TokenType> {
+fn block_execute(
+    global: &Box<Environment>,
+    statements: Vec<Stmt>,
+    new: Box<Environment>,
+) -> Result<TokenType> {
     for stmt in statements {
-        execute(&new, stmt)?;
+        execute(global, &new, stmt)?;
     }
     Ok(TokenType::NIL)
 }
-fn expr_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
-    evaluate(env, expr)?;
+fn expr_stmt(global: &Box<Environment>, env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
+    evaluate(global, env, expr)?;
     return Ok(TokenType::NIL);
 }
 fn if_stmt(
+    global: &Box<Environment>,
     env: &Box<Environment>,
     condition: Expr,
     then_branch: Stmt,
     else_branch: Stmt,
 ) -> Result<TokenType> {
-    if convert_bool(evaluate(env, condition)?) {
-        execute(env, then_branch)?;
+    if convert_bool(evaluate(global, env, condition)?) {
+        execute(global, env, then_branch)?;
     } else if else_branch != Stmt::None {
-        execute(env, else_branch)?;
+        execute(global, env, else_branch)?;
     }
     Ok(TokenType::NIL)
 }
 
-fn print_stmt(env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
-    let value: TokenType = evaluate(env, expr)?;
+fn print_stmt(global: &Box<Environment>, env: &Box<Environment>, expr: Expr) -> Result<TokenType> {
+    let value: TokenType = evaluate(global, env, expr)?;
     println!("{}", value.stringify());
     return Ok(TokenType::NIL);
 }
 
-fn var_stmt(env: &Box<Environment>, name: Token, initializer: Expr) -> Result<TokenType> {
+fn var_stmt(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    name: Token,
+    initializer: Expr,
+) -> Result<TokenType> {
     let mut value = TokenType::NIL;
     if initializer != Expr::Null {
-        value = evaluate(env, initializer)?
+        value = evaluate(global, env, initializer)?
     }
     env.define(name.get_lexeme(), value);
     Ok(TokenType::NIL)
 }
 
-fn while_stmt(env: &Box<Environment>, condition: Expr, body: Stmt) -> Result<TokenType> {
-    while convert_bool(evaluate(env, condition.clone())?) {
-        execute(env, body.clone())?;
+fn while_stmt(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    condition: Expr,
+    body: Stmt,
+) -> Result<TokenType> {
+    while convert_bool(evaluate(global, env, condition.clone())?) {
+        execute(global, env, body.clone())?;
     }
     Ok(TokenType::NIL)
 }
@@ -106,12 +123,13 @@ fn lit_expr(lit: Token) -> TokenType {
 }
 
 fn logical_expr(
+    global: &Box<Environment>,
     env: &Box<Environment>,
     eleft: Expr,
     eright: Expr,
     operator: Token,
 ) -> Result<TokenType> {
-    let left: TokenType = evaluate(env, eleft)?;
+    let left: TokenType = evaluate(global, env, eleft)?;
     if operator.get_type() == TokenType::OR {
         if convert_bool(left.clone()) {
             return Ok(left);
@@ -121,15 +139,24 @@ fn logical_expr(
             return Ok(left);
         }
     }
-    evaluate(env, eright)
+    evaluate(global, env, eright)
 }
 
-fn group_expr(env: &Box<Environment>, inside: Expr) -> Result<TokenType> {
-    Ok(evaluate(env, inside)?)
+fn group_expr(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    inside: Expr,
+) -> Result<TokenType> {
+    Ok(evaluate(global, env, inside)?)
 }
 
-fn unary_expr(env: &Box<Environment>, operator: Token, ex: Expr) -> Result<TokenType> {
-    let right = evaluate(env, ex)?;
+fn unary_expr(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    operator: Token,
+    ex: Expr,
+) -> Result<TokenType> {
+    let right = evaluate(global, env, ex)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
         TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
@@ -138,9 +165,15 @@ fn unary_expr(env: &Box<Environment>, operator: Token, ex: Expr) -> Result<Token
     }
 }
 
-fn binary_expr(env: &Box<Environment>, operator: Token, l: Expr, r: Expr) -> Result<TokenType> {
-    let left: TokenType = evaluate(env, l)?;
-    let right: TokenType = evaluate(env, r)?;
+fn binary_expr(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    operator: Token,
+    l: Expr,
+    r: Expr,
+) -> Result<TokenType> {
+    let left: TokenType = evaluate(global, env, l)?;
+    let right: TokenType = evaluate(global, env, r)?;
     let line: i32 = operator.get_line();
     match operator.get_type() {
         TokenType::GREATER => greater(handle_number(left, line)?, handle_number(right, line)?),
@@ -178,15 +211,16 @@ fn binary_expr(env: &Box<Environment>, operator: Token, l: Expr, r: Expr) -> Res
 }
 
 fn call_expr(
+    global: &Box<Environment>,
     env: &Box<Environment>,
     callee: Expr,
     paren: Token,
     arguments: Vec<Expr>,
 ) -> Result<TokenType> {
-    let ttcallee = evaluate(env, callee)?;
+    let ttcallee = evaluate(global, env, callee)?;
     let mut ttarguments: Vec<TokenType> = vec![];
     for arg in arguments {
-        ttarguments.push(evaluate(env, arg)?);
+        ttarguments.push(evaluate(global, env, arg)?);
     }
 
     Ok(TokenType::NIL)
@@ -196,8 +230,13 @@ fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
     env.get(tok)
 }
 
-fn assign_expr(env: &Box<Environment>, name: Token, expr: Expr) -> Result<TokenType> {
-    let value = evaluate(env, expr)?;
+fn assign_expr(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    name: Token,
+    expr: Expr,
+) -> Result<TokenType> {
+    let value = evaluate(global, env, expr)?;
     if env.assign(name.get_lexeme(), value.clone()) {
         return Ok(value);
     }
