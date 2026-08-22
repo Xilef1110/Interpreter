@@ -1,3 +1,4 @@
+use crate::callable::LoxFunction;
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
@@ -71,6 +72,20 @@ fn expr_stmt(global: &Box<Environment>, env: &Box<Environment>, expr: Expr) -> R
     evaluate(global, env, expr)?;
     return Ok(TokenType::NIL);
 }
+
+fn fun_stmt(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    name: Token,
+    params: Vec<Token>,
+    body: Vec<Stmt>,
+) -> Result<TokenType> {
+    let function: TokenType =
+        TokenType::LitFun(Box::new(LoxFunction::new(name.clone(), params, body)));
+    env.define(name.get_lexeme(), function);
+    Ok(TokenType::NIL)
+}
+
 fn if_stmt(
     global: &Box<Environment>,
     env: &Box<Environment>,

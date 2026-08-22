@@ -1,3 +1,5 @@
+use crate::callable::LoxFunction;
+
 #[derive(Clone, Debug, strum_macros::Display, PartialEq)]
 pub enum TokenType {
     // Single-character tokens.
@@ -27,6 +29,7 @@ pub enum TokenType {
     IDENTIFIER,
     STRING(String),
     NUMBER(f64),
+    LitFun(Box<LoxFunction>), // This is for the Interpretor to handle functions
 
     // Keywords.
     AND,

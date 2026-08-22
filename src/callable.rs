@@ -8,7 +8,8 @@ pub trait Callable {
     fn call(&self, environment: &Box<Environment>, arguments: Vec<TokenType>) -> TokenType;
 }
 
-struct LoxFunction {
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoxFunction {
     name: Token,
     params: Vec<Token>,
     body: Vec<Stmt>,
@@ -16,11 +17,11 @@ struct LoxFunction {
 }
 
 impl LoxFunction {
-    fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
+    pub fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
         LoxFunction { name, params, body }
     }
 
-    fn to_strint(&self) -> String {
+    pub fn to_strint(&self) -> String {
         format!("<fn {}>", self.name.get_lexeme())
     }
 }

@@ -46,6 +46,7 @@ impl<'a> Lox<'a> {
             had_runtime_error: Cell::new(false),
             env: Box::new(Environment::new()),
         }
+        // TODO: setup env with native functions
     }
     fn run_file(&mut self, filepath: String) {
         println!("Command line argument: {:?}", filepath);
