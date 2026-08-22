@@ -170,7 +170,7 @@ impl<'a> Parser<'a> {
         if !self.check(TokenType::RightParen) {
             loop {
                 if parameters.len() >= 255 {
-                    self.error(self.peek_tok(), "Can't have more than 255 parameters.");
+                    self.error(self.peek_tok(), "Can't have more than 255 parameters.")?;
                 }
                 parameters.push(self.tok_consume(TokenType::IDENTIFIER, "Expect parameter name.")?);
                 if !self.match_single(TokenType::COMMA) {
@@ -178,12 +178,12 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        self.consume(TokenType::RightParen, "Expect ')' after parameters.");
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
 
         self.consume(
             TokenType::LeftBrace,
             &format!("Expect 'Opening Brace' before {} body", kind),
-        );
+        )?;
         let body: Vec<Stmt> = self.block_statement()?;
         Ok(Stmt::Func {
             name,
@@ -361,7 +361,7 @@ impl<'a> Parser<'a> {
 
         loop {
             if self.match_single(TokenType::LeftParen) {
-                expr = self.finish_call(expr);
+                expr = self.finish_call(expr)?;
             } else {
                 break;
             }
@@ -484,7 +484,7 @@ impl<'a> Parser<'a> {
         if !self.check(TokenType::RightParen) {
             loop {
                 if arguments.len() >= 255 {
-                    self.error(self.peek_tok(), "Can't have more than 255 arguments.");
+                    self.error(self.peek_tok(), "Can't have more than 255 arguments.")?;
                     // No need to panice. While the code doesn't match the grammer, the parser is still in a valid state.
                 }
                 arguments.push(self.expression()?);
@@ -494,7 +494,7 @@ impl<'a> Parser<'a> {
                 break;
             }
         }
-        self.consume(TokenType::RightParen, "Expect ')' after arguments.");
+        self.consume(TokenType::RightParen, "Expect ')' after arguments.")?;
         let paren: Token = self.previous();
         Ok(Expr::Call(Box::new(callee), paren, arguments))
     }

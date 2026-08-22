@@ -242,10 +242,9 @@ fn call_expr(
     }
 
     if let TokenType::LitFun(function) = ttcallee {
-        (*function).call_fun(global, env, ttarguments);
+        return Ok(function.call_fun(global, env, ttarguments));
     }
-
-    Ok(TokenType::NIL)
+    Err(anyhow!("Not a collable: {}", paren.get_line()))
 }
 
 fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
