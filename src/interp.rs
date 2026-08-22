@@ -1,4 +1,4 @@
-use crate::callable::LoxFunction;
+use crate::callable::{Callable, Callables, LoxFunction};
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 use anyhow::{Result, anyhow};
 
@@ -54,6 +54,7 @@ fn execute(global: &Box<Environment>, env: &Box<Environment>, stmt: Stmt) -> Res
         Stmt::Print(value) => print_stmt(global, env, value),
         Stmt::Var { name, initializer } => var_stmt(global, env, name, initializer),
         Stmt::While(condition, body) => while_stmt(global, env, condition, *body),
+        Stmt::Func { name, params, body } => fun_stmt(env, name, params, body),
         _ => Ok(TokenType::NIL),
     }
 }
@@ -74,14 +75,16 @@ fn expr_stmt(global: &Box<Environment>, env: &Box<Environment>, expr: Expr) -> R
 }
 
 fn fun_stmt(
-    global: &Box<Environment>,
     env: &Box<Environment>,
     name: Token,
     params: Vec<Token>,
     body: Vec<Stmt>,
 ) -> Result<TokenType> {
-    let function: TokenType =
-        TokenType::LitFun(Box::new(LoxFunction::new(name.clone(), params, body)));
+    let function: TokenType = TokenType::LitFun(Box::new(Callables::LoxFunction(
+        LoxFunction::new(name.clone(), params, body),
+    )));
+
+    // TokenType::LitFun(Box::new(LoxFunction::new(name.clone(), params, body)));
     env.define(name.get_lexeme(), function);
     Ok(TokenType::NIL)
 }
@@ -236,6 +239,10 @@ fn call_expr(
     let mut ttarguments: Vec<TokenType> = vec![];
     for arg in arguments {
         ttarguments.push(evaluate(global, env, arg)?);
+    }
+
+    if let TokenType::LitFun(function) = ttcallee {
+        (*function).call_fun(global, env, ttarguments);
     }
 
     Ok(TokenType::NIL)

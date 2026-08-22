@@ -19,6 +19,7 @@ anyhow = "1.0.104"
 # Lists packages needed to compile and run the package's code
 strum = "0.28"
 strum_macros = "0.28"
+trait_enum = "0.5.0"
 
 
 [dev-dependencies]

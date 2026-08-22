@@ -1,4 +1,4 @@
-use crate::callable::LoxFunction;
+use crate::callable::Callables;
 
 #[derive(Clone, Debug, strum_macros::Display, PartialEq)]
 pub enum TokenType {
@@ -29,7 +29,7 @@ pub enum TokenType {
     IDENTIFIER,
     STRING(String),
     NUMBER(f64),
-    LitFun(Box<LoxFunction>), // This is for the Interpretor to handle functions
+    LitFun(Box<Callables>), // This is for the Interpretor to handle functions
 
     // Keywords.
     AND,

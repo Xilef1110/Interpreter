@@ -2,10 +2,16 @@ use crate::Environment;
 use crate::Token;
 use crate::TokenType;
 use crate::stmt::Stmt;
+use trait_enum;
 
 pub trait Callable {
     fn arity(&self) -> i32;
-    fn call(&self, environment: &Box<Environment>, arguments: Vec<TokenType>) -> TokenType;
+    fn call_fun(
+        &self,
+        globals: &Box<Environment>,
+        environment: &Box<Environment>,
+        arguments: Vec<TokenType>,
+    ) -> TokenType;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,8 +37,20 @@ impl Callable for LoxFunction {
         return self.params.len() as i32;
     }
 
-    fn call(&self, env: &Box<Environment>, arguments: Vec<TokenType>) -> TokenType {
+    fn call_fun(
+        &self,
+        globals: &Box<Environment>,
+        env: &Box<Environment>,
+        arguments: Vec<TokenType>,
+    ) -> TokenType {
         TokenType::NIL
         // TODO
+    }
+}
+
+trait_enum::trait_enum! {
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum Callables: Callable {
+        LoxFunction,
     }
 }
