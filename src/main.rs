@@ -6,8 +6,8 @@ use std::io::stdin;
 use std::io::stdout;
 use std::process;
 
+use crate::callable::{Callables, Clock};
 use crate::environment::Environment;
-// use crate::expr;
 use crate::parser::Parser;
 use crate::scanner::TokenType;
 use crate::scanner::token::Token;
@@ -41,12 +41,16 @@ fn main() {
 
 impl<'a> Lox<'a> {
     pub fn new_lox() -> Lox<'a> {
-        Lox {
+        let lox = Lox {
             had_error: Cell::new(false),
             had_runtime_error: Cell::new(false),
             env: Box::new(Environment::new()),
-        }
-        // TODO: setup env with native functions
+        };
+        lox.env.define(
+            String::from("clock"),
+            TokenType::LitFun(Box::new(Callables::Clock(Clock {}))),
+        );
+        lox
     }
     fn run_file(&mut self, filepath: String) {
         println!("Command line argument: {:?}", filepath);

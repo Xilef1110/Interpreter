@@ -2,6 +2,7 @@ use crate::Environment;
 use crate::Token;
 use crate::TokenType;
 use crate::stmt::Stmt;
+use std::time::SystemTime;
 use trait_enum;
 
 pub trait Callable {
@@ -13,6 +14,17 @@ pub trait Callable {
         arguments: Vec<TokenType>,
     ) -> TokenType;
 }
+
+trait_enum::trait_enum! {
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum Callables: Callable {
+        LoxFunction,
+        Clock,
+    }
+}
+
+/* Lox Function
+A type for user defined functions */
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoxFunction {
@@ -48,9 +60,29 @@ impl Callable for LoxFunction {
     }
 }
 
-trait_enum::trait_enum! {
-    #[derive(Clone, Debug, PartialEq)]
-    pub enum Callables: Callable {
-        LoxFunction,
+/* Native Functions */
+
+// Clock
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Clock {}
+
+impl Callable for Clock {
+    fn arity(&self) -> i32 {
+        0
+    }
+
+    fn call_fun(
+        &self,
+        _globals: &Box<Environment>,
+        _environment: &Box<Environment>,
+        _arguments: Vec<TokenType>,
+    ) -> TokenType {
+        TokenType::NUMBER(
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs_f64(),
+        )
     }
 }
