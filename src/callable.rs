@@ -1,7 +1,6 @@
-use crate::Environment;
-use crate::Token;
-use crate::TokenType;
 use crate::stmt::Stmt;
+use crate::{Environment, Token, TokenType, interp};
+use anyhow::Result;
 use std::time::SystemTime;
 use trait_enum;
 
@@ -12,7 +11,8 @@ pub trait Callable {
         globals: &Box<Environment>,
         environment: &Box<Environment>,
         arguments: Vec<TokenType>,
-    ) -> TokenType;
+    ) -> Result<TokenType>;
+    fn to_string(&self) -> String;
 }
 
 trait_enum::trait_enum! {
@@ -38,10 +38,6 @@ impl LoxFunction {
     pub fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
         LoxFunction { name, params, body }
     }
-
-    pub fn to_strint(&self) -> String {
-        format!("<fn {}>", self.name.get_lexeme())
-    }
 }
 
 impl Callable for LoxFunction {
@@ -54,9 +50,16 @@ impl Callable for LoxFunction {
         globals: &Box<Environment>,
         env: &Box<Environment>,
         arguments: Vec<TokenType>,
-    ) -> TokenType {
-        TokenType::NIL
-        // TODO
+    ) -> Result<TokenType> {
+        let environment = Environment::new_nested(globals);
+        for i in 0..self.params.len() {
+            environment.define(self.params[i].get_lexeme(), arguments[i].clone());
+        }
+        interp::block_execute(globals, self.body.clone(), Box::new(environment))?;
+        Ok(TokenType::NIL)
+    }
+    fn to_string(&self) -> String {
+        format!("<fn {}>", self.name.get_lexeme())
     }
 }
 
@@ -77,12 +80,16 @@ impl Callable for Clock {
         _globals: &Box<Environment>,
         _environment: &Box<Environment>,
         _arguments: Vec<TokenType>,
-    ) -> TokenType {
-        TokenType::NUMBER(
+    ) -> Result<TokenType> {
+        Ok(TokenType::NUMBER(
             SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_secs_f64(),
-        )
+        ))
+    }
+
+    fn to_string(&self) -> String {
+        String::from("<native fn>")
     }
 }

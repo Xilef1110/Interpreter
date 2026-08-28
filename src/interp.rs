@@ -59,7 +59,7 @@ fn execute(global: &Box<Environment>, env: &Box<Environment>, stmt: Stmt) -> Res
     }
 }
 
-fn block_execute(
+pub fn block_execute(
     global: &Box<Environment>,
     statements: Vec<Stmt>,
     new: Box<Environment>,
@@ -84,7 +84,6 @@ fn fun_stmt(
         LoxFunction::new(name.clone(), params, body),
     )));
 
-    // TokenType::LitFun(Box::new(LoxFunction::new(name.clone(), params, body)));
     env.define(name.get_lexeme(), function);
     Ok(TokenType::NIL)
 }
