@@ -237,14 +237,25 @@ fn call_expr(
 ) -> Result<TokenType> {
     let ttcallee = evaluate(global, env, callee)?;
     let mut ttarguments: Vec<TokenType> = vec![];
+    let arg_len = arguments.len();
     for arg in arguments {
         ttarguments.push(evaluate(global, env, arg)?);
     }
 
     if let TokenType::LitFun(function) = ttcallee {
+        if arg_len != function.arity() as usize {
+            return Err(anyhow!(
+                "Expected {} arguments but got {}.",
+                function.arity(),
+                arg_len
+            ));
+        }
         return Ok(function.call_fun(global, env, ttarguments));
     }
-    Err(anyhow!("Not a collable: {}", paren.get_line()))
+    Err(anyhow!(
+        "Not a callable - Can only call functions and classes: {}",
+        paren.get_line()
+    ))
 }
 
 fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
