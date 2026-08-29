@@ -48,14 +48,18 @@ impl Callable for LoxFunction {
     fn call_fun(
         &self,
         globals: &Box<Environment>,
-        env: &Box<Environment>,
+        _env: &Box<Environment>,
         arguments: Vec<TokenType>,
     ) -> Result<TokenType> {
         let environment = Environment::new_nested(globals);
         for i in 0..self.params.len() {
             environment.define(self.params[i].get_lexeme(), arguments[i].clone());
         }
-        interp::block_execute(globals, self.body.clone(), Box::new(environment))?;
+        if let TokenType::Returned(value) =
+            interp::block_execute(globals, self.body.clone(), Box::new(environment))?
+        {
+            return Ok(*value);
+        }
         Ok(TokenType::NIL)
     }
     fn to_string(&self) -> String {

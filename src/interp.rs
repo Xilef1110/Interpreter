@@ -52,6 +52,7 @@ fn execute(global: &Box<Environment>, env: &Box<Environment>, stmt: Stmt) -> Res
             else_branch,
         } => if_stmt(global, env, condition, *then_branch, *else_branch),
         Stmt::Print(value) => print_stmt(global, env, value),
+        Stmt::Return(keyword, value) => return_stmt(global, env, keyword, value),
         Stmt::Var { name, initializer } => var_stmt(global, env, name, initializer),
         Stmt::While(condition, body) => while_stmt(global, env, condition, *body),
         Stmt::Func { name, params, body } => fun_stmt(env, name, params, body),
@@ -107,6 +108,23 @@ fn print_stmt(global: &Box<Environment>, env: &Box<Environment>, expr: Expr) -> 
     let value: TokenType = evaluate(global, env, expr)?;
     println!("{}", value.stringify());
     return Ok(TokenType::NIL);
+}
+
+fn return_stmt(
+    global: &Box<Environment>,
+    env: &Box<Environment>,
+    keyword: Token,
+    value: Expr,
+) -> Result<TokenType> {
+    let ret_value: TokenType;
+    if value != Expr::Null {
+        ret_value = evaluate(global, env, value)?;
+    } else {
+        ret_value = TokenType::NIL;
+    }
+
+    // TODO How to unwind stack???
+    panic!();
 }
 
 fn var_stmt(
@@ -249,7 +267,7 @@ fn call_expr(
                 arg_len
             ));
         }
-        return Ok(function.call_fun(global, env, ttarguments));
+        return Ok(function.call_fun(global, env, ttarguments)?);
     }
     Err(anyhow!(
         "Not a callable - Can only call functions and classes: {}",

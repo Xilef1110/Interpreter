@@ -30,6 +30,7 @@ pub enum TokenType {
     STRING(String),
     NUMBER(f64),
     LitFun(Box<Callables>), // This is for the Interpretor to handle functions
+    Returned(Box<TokenType>), // To unwind the stack when returning a value
 
     // Keywords.
     AND,

@@ -82,6 +82,7 @@ impl<'a> Parser<'a> {
             TokenType::FOR => self.for_statement(),
             TokenType::IF => self.if_statement(),
             TokenType::PRINT => self.print_statement(),
+            TokenType::RETURN => self.return_statement(),
             TokenType::WHILE => self.while_statement(),
             TokenType::LeftBrace => Ok(Stmt::Block(self.block_statement()?)),
             _ => self.expr_statement(),
@@ -218,6 +219,19 @@ impl<'a> Parser<'a> {
         };
         self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
         Ok(Stmt::Print(value))
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt> {
+        let keyword = self.previous();
+        let value: Expr;
+        if !self.check(TokenType::SEMICOLON) {
+            value = self.expression()?;
+        } else {
+            value = Expr::Null;
+        }
+
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+        Ok(Stmt::Return(keyword, value))
     }
 
     fn while_statement(&mut self) -> Result<Stmt> {

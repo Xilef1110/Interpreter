@@ -17,7 +17,7 @@ pub enum Stmt {
         else_branch: Box<Stmt>,
     },
     Print(Expr),
-    Return,
+    Return(Token, Expr),
     Var {
         name: Token,
         initializer: Expr,
