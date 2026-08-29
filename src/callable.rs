@@ -1,6 +1,6 @@
+use crate::interp::Result;
 use crate::stmt::Stmt;
 use crate::{Environment, Token, TokenType, interp};
-use anyhow::Result;
 use std::time::SystemTime;
 use trait_enum;
 
