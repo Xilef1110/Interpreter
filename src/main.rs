@@ -86,14 +86,14 @@ impl<'a> Lox<'a> {
     }
 
     fn run(&mut self, input: String) {
-        println!("{}", input);
+        // println!("{}", input);
 
         // Scan input
         let tokens;
         {
             let mut scanner = Box::new(scanner::Scanner::new_scanner(input, self));
             tokens = scanner.scan_tokens();
-            // dbg!(tokens.clone());
+            dbg!(tokens.clone());
         }
         let statements;
         {

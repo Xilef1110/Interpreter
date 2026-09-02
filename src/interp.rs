@@ -371,14 +371,20 @@ fn handle_number(ttype: TokenType, line: i32) -> Result<f64> {
     if let TokenType::NUMBER(num) = ttype {
         Ok(num)
     } else {
-        Err(ErrWrap::new_interp(format!("Expected Number: {}", line)))
+        Err(ErrWrap::new_interp(format!(
+            "Expected Number: line {}",
+            line
+        )))
     }
 }
 fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
     if let TokenType::STRING(str) = ttype {
         Ok(str)
     } else {
-        Err(ErrWrap::new_interp(format!("Expected String: {} ", line)))
+        Err(ErrWrap::new_interp(format!(
+            "Expected String: line {} ",
+            line
+        )))
     }
 }
 

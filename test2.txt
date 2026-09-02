@@ -1,7 +1,6 @@
-var a = 0;
-a = 1;
-a = 2;
-var temp;
-temp = "hello";
 
+fun pt() {
+	print true;
+}
 
+pt();
