@@ -89,7 +89,7 @@ fn fun_stmt(
     body: Vec<Stmt>,
 ) -> Result<TokenType> {
     let function: TokenType = TokenType::LitFun(Box::new(Callables::LoxFunction(
-        LoxFunction::new(name.clone(), params, body),
+        LoxFunction::new(name.clone(), params, body, env.clone()),
     )));
 
     env.define(name.get_lexeme(), function);
@@ -275,7 +275,7 @@ fn call_expr(
                 arg_len
             )));
         }
-        return Ok(function.call_fun(global.clone(), env.clone(), ttarguments)?);
+        return Ok(function.call_fun(global.clone(), ttarguments)?);
     }
     Err(ErrWrap::new_interp(format!(
         "Not a callable - Can only call functions and classes: {}",

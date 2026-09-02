@@ -1,9 +1,14 @@
-fun add1(n) {
-	return n + 1;
-}
-fun pt() {
-	return true;
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
 }
 
-print pt();
-print add1(7);
+var counter = makeCounter();
+counter(); // "1".
+counter(); // "2".
+

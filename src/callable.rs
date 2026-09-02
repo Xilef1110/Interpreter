@@ -7,12 +7,7 @@ use trait_enum;
 
 pub trait Callable {
     fn arity(&self) -> i32;
-    fn call_fun(
-        &self,
-        globals: Rc<Environment>,
-        environment: Rc<Environment>,
-        arguments: Vec<TokenType>,
-    ) -> Result<TokenType>;
+    fn call_fun(&self, globals: Rc<Environment>, arguments: Vec<TokenType>) -> Result<TokenType>;
     fn to_string(&self) -> String;
 }
 
@@ -32,12 +27,23 @@ pub struct LoxFunction {
     name: Token,
     params: Vec<Token>,
     body: Vec<Stmt>,
+    closure: Rc<Environment>,
     // arguments: Vec<TokenType>,
 }
 
 impl LoxFunction {
-    pub fn new(name: Token, params: Vec<Token>, body: Vec<Stmt>) -> LoxFunction {
-        LoxFunction { name, params, body }
+    pub fn new(
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+        closure: Rc<Environment>,
+    ) -> LoxFunction {
+        LoxFunction {
+            name,
+            params,
+            body,
+            closure,
+        }
     }
 }
 
@@ -46,19 +52,14 @@ impl Callable for LoxFunction {
         return self.params.len() as i32;
     }
 
-    fn call_fun(
-        &self,
-        globals: Rc<Environment>,
-        _env: Rc<Environment>,
-        arguments: Vec<TokenType>,
-    ) -> Result<TokenType> {
-        let environment = Environment::new_nested(globals);
+    fn call_fun(&self, globals: Rc<Environment>, arguments: Vec<TokenType>) -> Result<TokenType> {
+        let environment = Environment::new_nested(self.closure.clone());
         for i in 0..self.params.len() {
             environment.define(self.params[i].get_lexeme(), arguments[i].clone());
         }
 
         // If interpreting the function returns an error, we have to handle the case where we use error handling to unwind the stack
-        if let Err(err) = interp::block_execute(globals, self.body.clone(), Box::new(environment)) {
+        if let Err(err) = interp::block_execute(globals, self.body.clone(), Rc::new(environment)) {
             match err {
                 ErrWrap::InterpErr(e) => return Err(ErrWrap::InterpErr(e)),
                 ErrWrap::ReturnErr(returned) => {
@@ -90,12 +91,7 @@ impl Callable for Clock {
         0
     }
 
-    fn call_fun(
-        &self,
-        _globals: &Box<Environment>,
-        _environment: &Box<Environment>,
-        _arguments: Vec<TokenType>,
-    ) -> Result<TokenType> {
+    fn call_fun(&self, _globals: Rc<Environment>, _arguments: Vec<TokenType>) -> Result<TokenType> {
         Ok(TokenType::NUMBER(
             SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
