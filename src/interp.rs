@@ -1,6 +1,6 @@
-use crate::callable::{Callable, Callables, LoxFunction};
+use crate::callable::{Callables, LoxFunction};
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
-use err::ErrWrap;
+pub use err::ErrWrap;
 // use anyhow::{Result, anyhow};
 mod err;
 
@@ -15,10 +15,10 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     for stmt in statements {
         match execute(&lox.env, &lox.env, stmt) {
             Ok(_ttype) => {} // Do Nothing
-            Err(err) => {
-                // lox.runtime_error(err.to_string());
-                // TODO
-            }
+            Err(err) => match err {
+                ErrWrap::ReturnErr(_value) => panic!("statement returned value"),
+                ErrWrap::InterpErr(err) => lox.runtime_error(err.to_string()),
+            },
         }
     }
 }
@@ -128,8 +128,7 @@ fn return_stmt(
         ret_value = TokenType::NIL;
     }
 
-    // TODO How to unwind stack???
-    panic!();
+    Err(ErrWrap::ReturnErr(ret_value))
 }
 
 fn var_stmt(
@@ -287,7 +286,10 @@ fn call_expr(
 }
 
 fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
-    env.get(tok)
+    match env.get(tok) {
+        Ok(value) => Ok(value),
+        Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+    }
 }
 
 fn assign_expr(
