@@ -1,10 +1,9 @@
 // use std::os::unix::fs;
 
 use std::cell::Cell;
-use std::io::Write;
-use std::io::stdin;
-use std::io::stdout;
+use std::io::{Write, stdin, stdout};
 use std::process;
+use std::rc::Rc;
 
 use crate::callable::{Callables, Clock};
 use crate::environment::Environment;
@@ -20,10 +19,10 @@ mod parser;
 pub mod scanner;
 mod stmt;
 
-pub struct Lox<'a> {
+pub struct Lox {
     had_error: Cell<bool>,
     had_runtime_error: Cell<bool>,
-    env: Box<Environment<'a>>,
+    env: Rc<Environment>,
 }
 
 fn main() {
@@ -39,12 +38,12 @@ fn main() {
     }
 }
 
-impl<'a> Lox<'a> {
-    pub fn new_lox() -> Lox<'a> {
+impl Lox {
+    pub fn new_lox() -> Lox {
         let lox = Lox {
             had_error: Cell::new(false),
             had_runtime_error: Cell::new(false),
-            env: Box::new(Environment::new()),
+            env: Rc::new(Environment::new()),
         };
         lox.env.define(
             String::from("clock"),

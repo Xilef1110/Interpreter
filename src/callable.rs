@@ -1,6 +1,7 @@
 use crate::interp::{ErrWrap, Result};
 use crate::stmt::Stmt;
 use crate::{Environment, Token, TokenType, interp};
+use std::rc::Rc;
 use std::time::SystemTime;
 use trait_enum;
 
@@ -8,8 +9,8 @@ pub trait Callable {
     fn arity(&self) -> i32;
     fn call_fun(
         &self,
-        globals: &Box<Environment>,
-        environment: &Box<Environment>,
+        globals: Rc<Environment>,
+        environment: Rc<Environment>,
         arguments: Vec<TokenType>,
     ) -> Result<TokenType>;
     fn to_string(&self) -> String;
@@ -47,8 +48,8 @@ impl Callable for LoxFunction {
 
     fn call_fun(
         &self,
-        globals: &Box<Environment>,
-        _env: &Box<Environment>,
+        globals: Rc<Environment>,
+        _env: Rc<Environment>,
         arguments: Vec<TokenType>,
     ) -> Result<TokenType> {
         let environment = Environment::new_nested(globals);

@@ -2,20 +2,21 @@ use crate::{Token, TokenType};
 use anyhow::{Result, anyhow};
 use std::cell::RefCell;
 use std::collections::HashMap;
-#[derive(Clone, PartialEq)]
-pub struct Environment<'a> {
+use std::rc::Rc;
+#[derive(Clone, PartialEq, Debug)]
+pub struct Environment {
     map: RefCell<HashMap<String, TokenType>>,
-    enclosing: Option<&'a Box<Environment<'a>>>,
+    enclosing: Option<Rc<Environment>>,
 }
 
-impl<'a> Environment<'a> {
-    pub fn new() -> Environment<'a> {
+impl Environment {
+    pub fn new() -> Environment {
         Environment {
             map: RefCell::new(HashMap::new()),
             enclosing: Option::None,
         }
     }
-    pub fn new_nested(enclosing: &'a Box<Environment<'a>>) -> Environment<'a> {
+    pub fn new_nested(enclosing: Rc<Environment>) -> Environment {
         Environment {
             map: RefCell::new(HashMap::new()),
             enclosing: Option::Some(enclosing),
@@ -50,7 +51,7 @@ impl<'a> Environment<'a> {
         }
     }
 
-    pub fn get_enclosing(&self) -> Option<&'a Box<Environment<'a>>> {
-        self.enclosing
+    pub fn get_enclosing(&self) -> Option<Rc<Environment>> {
+        self.enclosing.clone()
     }
 }

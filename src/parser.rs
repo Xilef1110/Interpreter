@@ -9,14 +9,14 @@ use anyhow::{Result, anyhow};
 pub struct Parser<'a> {
     tokens: Vec<Token>,
     current: i32,
-    lox: &'a Lox<'a>,
+    lox: &'a Lox,
 }
 
 /* Parser
     As part of parsing, the Token is converted to TokenType
 */
 impl<'a> Parser<'a> {
-    pub fn new_parser(tokens: Vec<Token>, lox: &'a Lox<'a>) -> Parser<'a> {
+    pub fn new_parser(tokens: Vec<Token>, lox: &'a Lox) -> Parser<'a> {
         Parser {
             tokens,
             current: 0,
