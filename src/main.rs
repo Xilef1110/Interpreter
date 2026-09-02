@@ -93,7 +93,7 @@ impl<'a> Lox<'a> {
         {
             let mut scanner = Box::new(scanner::Scanner::new_scanner(input, self));
             tokens = scanner.scan_tokens();
-            dbg!(tokens.clone());
+            // dbg!(tokens.clone());
         }
         let statements;
         {

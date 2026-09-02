@@ -1,6 +1,9 @@
-
+fun add1(n) {
+	return n + 1;
+}
 fun pt() {
-	print true;
+	return true;
 }
 
-pt();
+print pt();
+print add1(7);

@@ -390,8 +390,8 @@ impl<'a> Parser<'a> {
 
     fn call(&mut self) -> Result<Expr> {
         let mut expr: Expr = self.primary()?;
-        println!("call");
-        dbg!(expr.clone());
+        // println!("call");
+        // dbg!(expr.clone());
 
         loop {
             if self.match_single(TokenType::LeftParen) {
@@ -425,10 +425,10 @@ impl<'a> Parser<'a> {
                 Ok(Expr::Literal { value: next })
             }
             TokenType::IDENTIFIER => {
-                println!("Identifier");
+                // println!("Identifier");
                 self.advance();
-                dbg!(next);
-                dbg!(self.previous());
+                // dbg!(next);
+                // dbg!(self.previous());
                 Ok(Expr::Variable(self.previous()))
             }
             TokenType::EQUAL => {
@@ -436,8 +436,8 @@ impl<'a> Parser<'a> {
                 Ok(Expr::Variable(self.previous()))
             }
             _ => {
-                dbg!(next.clone());
-                dbg!(self.previous());
+                // dbg!(next.clone());
+                // dbg!(self.previous());
                 let line = next.get_line();
                 self.lox.parse_error(next, "Expect Expression".to_string());
                 Err(anyhow! {"Expect Expression: line {}", line})

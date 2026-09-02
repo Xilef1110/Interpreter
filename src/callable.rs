@@ -61,9 +61,11 @@ impl Callable for LoxFunction {
             match err {
                 ErrWrap::InterpErr(e) => return Err(ErrWrap::InterpErr(e)),
                 ErrWrap::ReturnErr(returned) => {
-                    if let TokenType::Returned(value) = returned {
-                        return Ok(*value);
-                    }
+                    return Ok(returned);
+                    // if let TokenType::Returned(value) = returned {
+                    //     dbg!(value.clone());
+                    //     return Ok(*value);
+                    // }
                 }
             }
         }
