@@ -86,7 +86,7 @@ impl<'a> Lox<'a> {
     }
 
     fn run(&mut self, input: String) {
-        println!("{}", input);
+        // println!("{}", input);
 
         // Scan input
         let tokens;

@@ -1,7 +1,9 @@
-var a = 0;
-a = 1;
-a = 2;
-var temp;
-temp = "hello";
+fun add1(n) {
+	return n + 1;
+}
+fun pt() {
+	return true;
+}
 
-
+print pt();
+print add1(7);

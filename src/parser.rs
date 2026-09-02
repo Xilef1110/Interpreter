@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
                 statement = self.var_declaration();
             }
             _ => {
-                self.advance();
+                // self.advance();
                 statement = self.statement();
             }
         }
@@ -78,13 +78,31 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt> {
-        match self.advance().get_type() {
-            TokenType::FOR => self.for_statement(),
-            TokenType::IF => self.if_statement(),
-            TokenType::PRINT => self.print_statement(),
-            TokenType::RETURN => self.return_statement(),
-            TokenType::WHILE => self.while_statement(),
-            TokenType::LeftBrace => Ok(Stmt::Block(self.block_statement()?)),
+        match self.safe_peek() {
+            TokenType::FOR => {
+                self.advance();
+                self.for_statement()
+            }
+            TokenType::IF => {
+                self.advance();
+                self.if_statement()
+            }
+            TokenType::PRINT => {
+                self.advance();
+                self.print_statement()
+            }
+            TokenType::RETURN => {
+                self.advance();
+                self.return_statement()
+            }
+            TokenType::WHILE => {
+                self.advance();
+                self.while_statement()
+            }
+            TokenType::LeftBrace => {
+                self.advance();
+                Ok(Stmt::Block(self.block_statement()?))
+            }
             _ => self.expr_statement(),
         }
         // if self.match_types(vec![TokenType::PRINT]) {
@@ -230,7 +248,7 @@ impl<'a> Parser<'a> {
             value = Expr::Null;
         }
 
-        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.")?;
         Ok(Stmt::Return(keyword, value))
     }
 
@@ -372,6 +390,8 @@ impl<'a> Parser<'a> {
 
     fn call(&mut self) -> Result<Expr> {
         let mut expr: Expr = self.primary()?;
+        // println!("call");
+        // dbg!(expr.clone());
 
         loop {
             if self.match_single(TokenType::LeftParen) {
@@ -405,6 +425,7 @@ impl<'a> Parser<'a> {
                 Ok(Expr::Literal { value: next })
             }
             TokenType::IDENTIFIER => {
+                // println!("Identifier");
                 self.advance();
                 // dbg!(next);
                 // dbg!(self.previous());

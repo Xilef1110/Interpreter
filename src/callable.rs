@@ -1,6 +1,6 @@
+use crate::interp::{ErrWrap, Result};
 use crate::stmt::Stmt;
 use crate::{Environment, Token, TokenType, interp};
-use anyhow::Result;
 use std::time::SystemTime;
 use trait_enum;
 
@@ -55,13 +55,23 @@ impl Callable for LoxFunction {
         for i in 0..self.params.len() {
             environment.define(self.params[i].get_lexeme(), arguments[i].clone());
         }
-        if let TokenType::Returned(value) =
-            interp::block_execute(globals, self.body.clone(), Box::new(environment))?
-        {
-            return Ok(*value);
+
+        // If interpreting the function returns an error, we have to handle the case where we use error handling to unwind the stack
+        if let Err(err) = interp::block_execute(globals, self.body.clone(), Box::new(environment)) {
+            match err {
+                ErrWrap::InterpErr(e) => return Err(ErrWrap::InterpErr(e)),
+                ErrWrap::ReturnErr(returned) => {
+                    return Ok(returned);
+                    // if let TokenType::Returned(value) = returned {
+                    //     dbg!(value.clone());
+                    //     return Ok(*value);
+                    // }
+                }
+            }
         }
         Ok(TokenType::NIL)
     }
+
     fn to_string(&self) -> String {
         format!("<fn {}>", self.name.get_lexeme())
     }

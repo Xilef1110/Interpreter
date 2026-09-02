@@ -1,6 +1,10 @@
-use crate::callable::{Callable, Callables, LoxFunction};
+use crate::callable::{Callables, LoxFunction};
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
-use anyhow::{Result, anyhow};
+pub use err::ErrWrap;
+// use anyhow::{Result, anyhow};
+mod err;
+
+pub type Result<T> = std::result::Result<T, ErrWrap>;
 
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
@@ -11,9 +15,10 @@ pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     for stmt in statements {
         match execute(&lox.env, &lox.env, stmt) {
             Ok(_ttype) => {} // Do Nothing
-            Err(err) => {
-                lox.runtime_error(err.to_string());
-            }
+            Err(err) => match err {
+                ErrWrap::ReturnErr(_value) => panic!("statement returned value"),
+                ErrWrap::InterpErr(err) => lox.runtime_error(err.to_string()),
+            },
         }
     }
 }
@@ -123,8 +128,7 @@ fn return_stmt(
         ret_value = TokenType::NIL;
     }
 
-    // TODO How to unwind stack???
-    panic!();
+    Err(ErrWrap::ReturnErr(ret_value))
 }
 
 fn var_stmt(
@@ -196,7 +200,10 @@ fn unary_expr(
     match operator.get_type() {
         TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
         // TokenType::BANG => negation(is_truthy(right), line),
-        _ => Err(anyhow!("Expected Unary Operator: line {}", line)),
+        _ => Err(ErrWrap::new_interp(format!(
+            "Expected Unary Operator: line {}",
+            line
+        ))),
     }
 }
 
@@ -241,7 +248,10 @@ fn binary_expr(
                 ))
             }
         }
-        _ => Err(anyhow!("Incorrect binary operator: {}", line)),
+        _ => Err(ErrWrap::new_interp(format!(
+            "Incorrect binary operator: {}",
+            line
+        ))),
     }
 }
 
@@ -261,22 +271,25 @@ fn call_expr(
 
     if let TokenType::LitFun(function) = ttcallee {
         if arg_len != function.arity() as usize {
-            return Err(anyhow!(
+            return Err(ErrWrap::new_interp(format!(
                 "Expected {} arguments but got {}.",
                 function.arity(),
                 arg_len
-            ));
+            )));
         }
         return Ok(function.call_fun(global, env, ttarguments)?);
     }
-    Err(anyhow!(
+    Err(ErrWrap::new_interp(format!(
         "Not a callable - Can only call functions and classes: {}",
         paren.get_line()
-    ))
+    )))
 }
 
 fn var_expr(env: &Box<Environment>, tok: Token) -> Result<TokenType> {
-    env.get(tok)
+    match env.get(tok) {
+        Ok(value) => Ok(value),
+        Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+    }
 }
 
 fn assign_expr(
@@ -289,7 +302,10 @@ fn assign_expr(
     if env.assign(name.get_lexeme(), value.clone()) {
         return Ok(value);
     }
-    Err(anyhow!("Undefined variable: {}", name.get_line()))
+    Err(ErrWrap::new_interp(format!(
+        "Undefined variable: {}",
+        name.get_line()
+    )))
 }
 
 // Other Helpers
@@ -312,7 +328,7 @@ fn negation(ttype: TokenType, line: i32) -> Result<TokenType> {
     } else if let TokenType::FALSE = ttype {
         Ok(TokenType::TRUE)
     } else {
-        Err(anyhow!("Expected Boolean: {}", line))
+        Err(ErrWrap::new_interp(format!("Expected Boolean: {}", line)))
     }
 }
 fn greater(l: f64, r: f64) -> Result<TokenType> {
@@ -355,14 +371,20 @@ fn handle_number(ttype: TokenType, line: i32) -> Result<f64> {
     if let TokenType::NUMBER(num) = ttype {
         Ok(num)
     } else {
-        Err(anyhow!("Expected Number: {}", line))
+        Err(ErrWrap::new_interp(format!(
+            "Expected Number: line {}",
+            line
+        )))
     }
 }
 fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
     if let TokenType::STRING(str) = ttype {
         Ok(str)
     } else {
-        Err(anyhow!("Expected String: {} ", line))
+        Err(ErrWrap::new_interp(format!(
+            "Expected String: line {} ",
+            line
+        )))
     }
 }
 
