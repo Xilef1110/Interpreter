@@ -12,384 +12,393 @@ pub struct Interp {
     env: Rc<Environment>,
     locals: HashMap<Expr, i32>,
 }
-// Core expression evaluation
-pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
-    // let mut env = Environment::new_environment();
+impl Interp {
+    // Core expression evaluation
+    pub fn interpret(&self, statements: Vec<Stmt>, lox: &mut Lox) {
+        // let mut env = Environment::new_environment();
 
-    // Lox should always have the top level (global) scope
-    assert!(lox.env.get_enclosing() == None);
-    for stmt in statements {
-        match execute(Rc::clone(&lox.env), Rc::clone(&lox.env), stmt) {
-            Ok(_ttype) => {} // Do Nothing
-            Err(err) => match err {
-                ErrWrap::ReturnErr(_value) => panic!("statement returned value"),
-                ErrWrap::InterpErr(err) => lox.runtime_error(err.to_string()),
-            },
-        }
-    }
-}
-fn evaluate(global: Rc<Environment>, env: Rc<Environment>, ex: Expr) -> Result<TokenType> {
-    match ex {
-        Expr::Literal { value } => Ok(lit_expr(value)),
-        Expr::Logical {
-            left,
-            operator,
-            right,
-        } => logical_expr(global, env, *left, *right, operator),
-        Expr::Grouping(inside) => group_expr(global, env, *inside),
-        Expr::Unary { operator, right } => unary_expr(global, env, operator, *right),
-        Expr::Binary {
-            left,
-            operator,
-            right,
-        } => binary_expr(global, env, operator, *left, *right),
-        Expr::Call(callee, paren, arguments) => call_expr(global, env, *callee, paren, arguments),
-        Expr::Variable(tok) => var_expr(env, tok),
-        Expr::Assign { name, value } => assign_expr(global, env, name, *value),
-        Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
-        _ => Ok(TokenType::NIL),
-    }
-}
-
-fn execute(global: Rc<Environment>, env: Rc<Environment>, stmt: Stmt) -> Result<TokenType> {
-    match stmt {
-        Stmt::Block(statements) => {
-            block_execute(global, statements, Rc::new(Environment::new_nested(env)))
-        }
-        Stmt::Expr(expr) => expr_stmt(global, env, expr),
-        Stmt::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => if_stmt(global, env, condition, *then_branch, *else_branch),
-        Stmt::Print(value) => print_stmt(global, env, value),
-        Stmt::Return(keyword, value) => return_stmt(global, env, keyword, value),
-        Stmt::Var { name, initializer } => var_stmt(global, env, name, initializer),
-        Stmt::While(condition, body) => while_stmt(global, env, condition, *body),
-        Stmt::Func { name, params, body } => fun_stmt(env, name, params, body),
-        _ => Ok(TokenType::NIL),
-    }
-}
-
-pub fn block_execute(
-    global: Rc<Environment>,
-    statements: Vec<Stmt>,
-    new: Rc<Environment>,
-) -> Result<TokenType> {
-    for stmt in statements {
-        execute(global.clone(), new.clone(), stmt)?;
-    }
-    Ok(TokenType::NIL)
-}
-fn expr_stmt(global: Rc<Environment>, env: Rc<Environment>, expr: Expr) -> Result<TokenType> {
-    evaluate(global, env, expr)?;
-    return Ok(TokenType::NIL);
-}
-
-fn fun_stmt(
-    env: Rc<Environment>,
-    name: Token,
-    params: Vec<Token>,
-    body: Vec<Stmt>,
-) -> Result<TokenType> {
-    let function: TokenType = TokenType::LitFun(Box::new(Callables::LoxFunction(
-        LoxFunction::new(name.clone(), params, body, env.clone()),
-    )));
-
-    env.define(name.get_lexeme(), function);
-    Ok(TokenType::NIL)
-}
-
-fn if_stmt(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    condition: Expr,
-    then_branch: Stmt,
-    else_branch: Stmt,
-) -> Result<TokenType> {
-    if convert_bool(evaluate(global.clone(), env.clone(), condition)?) {
-        execute(global, env, then_branch)?;
-    } else if else_branch != Stmt::None {
-        execute(global.clone(), env.clone(), else_branch)?;
-    }
-    Ok(TokenType::NIL)
-}
-
-fn print_stmt(global: Rc<Environment>, env: Rc<Environment>, expr: Expr) -> Result<TokenType> {
-    let value: TokenType = evaluate(global, env, expr)?;
-    println!("{}", value.stringify());
-    return Ok(TokenType::NIL);
-}
-
-fn return_stmt(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    keyword: Token,
-    value: Expr,
-) -> Result<TokenType> {
-    let ret_value: TokenType;
-    if value != Expr::Null {
-        ret_value = evaluate(global, env, value)?;
-    } else {
-        ret_value = TokenType::NIL;
-    }
-
-    Err(ErrWrap::ReturnErr(ret_value))
-}
-
-fn var_stmt(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    name: Token,
-    initializer: Expr,
-) -> Result<TokenType> {
-    let mut value = TokenType::NIL;
-    if initializer != Expr::Null {
-        value = evaluate(global.clone(), env.clone(), initializer)?
-    }
-    env.define(name.get_lexeme(), value);
-    Ok(TokenType::NIL)
-}
-
-fn while_stmt(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    condition: Expr,
-    body: Stmt,
-) -> Result<TokenType> {
-    while convert_bool(evaluate(global.clone(), env.clone(), condition.clone())?) {
-        execute(global.clone(), env.clone(), body.clone())?;
-    }
-    Ok(TokenType::NIL)
-}
-
-fn lit_expr(lit: Token) -> TokenType {
-    lit.get_type()
-}
-
-fn logical_expr(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    eleft: Expr,
-    eright: Expr,
-    operator: Token,
-) -> Result<TokenType> {
-    let left: TokenType = evaluate(global.clone(), env.clone(), eleft)?;
-    if operator.get_type() == TokenType::OR {
-        if convert_bool(left.clone()) {
-            return Ok(left);
-        }
-    } else {
-        if !convert_bool(left.clone()) {
-            return Ok(left);
-        }
-    }
-    evaluate(global.clone(), env.clone(), eright)
-}
-
-fn group_expr(global: Rc<Environment>, env: Rc<Environment>, inside: Expr) -> Result<TokenType> {
-    Ok(evaluate(global, env, inside)?)
-}
-
-fn unary_expr(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    operator: Token,
-    ex: Expr,
-) -> Result<TokenType> {
-    let right = evaluate(global, env, ex)?;
-    let line: i32 = operator.get_line();
-    match operator.get_type() {
-        TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
-        // TokenType::BANG => negation(is_truthy(right), line),
-        _ => Err(ErrWrap::new_interp(format!(
-            "Expected Unary Operator: line {}",
-            line
-        ))),
-    }
-}
-
-fn binary_expr(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    operator: Token,
-    l: Expr,
-    r: Expr,
-) -> Result<TokenType> {
-    let left: TokenType = evaluate(global.clone(), env.clone(), l)?;
-    let right: TokenType = evaluate(global.clone(), env.clone(), r)?;
-    let line: i32 = operator.get_line();
-    match operator.get_type() {
-        TokenType::GREATER => greater(handle_number(left, line)?, handle_number(right, line)?),
-        TokenType::GreaterEqual => {
-            greater_equal(handle_number(left, line)?, handle_number(right, line)?)
-        }
-        TokenType::LESS => less(handle_number(left, line)?, handle_number(right, line)?),
-        TokenType::LessEqual => less_equal(handle_number(left, line)?, handle_number(right, line)?),
-        TokenType::EqualEqual => is_equal(left, right),
-        TokenType::BangEqual => negation(is_equal(left, right)?, line),
-        TokenType::MINUS => Ok(TokenType::NUMBER(
-            handle_number(left, line)? - handle_number(right, line)?,
-        )),
-        TokenType::SLASH => Ok(TokenType::NUMBER(
-            handle_number(left, line)? / handle_number(right, line)?,
-        )),
-        TokenType::STAR => Ok(TokenType::NUMBER(
-            handle_number(left, line)? * handle_number(right, line)?,
-        )),
-        TokenType::PLUS => {
-            if let TokenType::STRING(string) = left {
-                Ok(TokenType::STRING(format!(
-                    "{}{}",
-                    string,
-                    handle_string(right, line)?
-                )))
-            } else {
-                Ok(TokenType::NUMBER(
-                    handle_number(left, line)? + handle_number(right, line)?,
-                ))
+        // Lox should always have the top level (global) scope
+        assert!(lox.env.get_enclosing() == None);
+        for stmt in statements {
+            match execute(Rc::clone(&lox.env), Rc::clone(&lox.env), stmt) {
+                Ok(_ttype) => {} // Do Nothing
+                Err(err) => match err {
+                    ErrWrap::ReturnErr(_value) => panic!("statement returned value"),
+                    ErrWrap::InterpErr(err) => lox.runtime_error(err.to_string()),
+                },
             }
         }
-        _ => Err(ErrWrap::new_interp(format!(
-            "Incorrect binary operator: {}",
-            line
-        ))),
     }
-}
-
-fn call_expr(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    callee: Expr,
-    paren: Token,
-    arguments: Vec<Expr>,
-) -> Result<TokenType> {
-    let ttcallee = evaluate(global.clone(), env.clone(), callee)?;
-    let mut ttarguments: Vec<TokenType> = vec![];
-    let arg_len = arguments.len();
-    for arg in arguments {
-        ttarguments.push(evaluate(global.clone(), env.clone(), arg)?);
-    }
-
-    if let TokenType::LitFun(function) = ttcallee {
-        if arg_len != function.arity() as usize {
-            return Err(ErrWrap::new_interp(format!(
-                "Expected {} arguments but got {}.",
-                function.arity(),
-                arg_len
-            )));
+    fn evaluate(global: Rc<Environment>, env: Rc<Environment>, ex: Expr) -> Result<TokenType> {
+        match ex {
+            Expr::Literal { value } => Ok(lit_expr(value)),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => logical_expr(global, env, *left, *right, operator),
+            Expr::Grouping(inside) => group_expr(global, env, *inside),
+            Expr::Unary { operator, right } => unary_expr(global, env, operator, *right),
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => binary_expr(global, env, operator, *left, *right),
+            Expr::Call(callee, paren, arguments) => {
+                call_expr(global, env, *callee, paren, arguments)
+            }
+            Expr::Variable(tok) => var_expr(env, tok),
+            Expr::Assign { name, value } => assign_expr(global, env, name, *value),
+            Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
+            _ => Ok(TokenType::NIL),
         }
-        return Ok(function.call_fun(global.clone(), ttarguments)?);
     }
-    Err(ErrWrap::new_interp(format!(
-        "Not a callable - Can only call functions and classes: {}",
-        paren.get_line()
-    )))
-}
 
-fn var_expr(env: Rc<Environment>, tok: Token) -> Result<TokenType> {
-    match env.get(tok) {
-        Ok(value) => Ok(value),
-        Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+    fn execute(global: Rc<Environment>, env: Rc<Environment>, stmt: Stmt) -> Result<TokenType> {
+        match stmt {
+            Stmt::Block(statements) => {
+                block_execute(global, statements, Rc::new(Environment::new_nested(env)))
+            }
+            Stmt::Expr(expr) => expr_stmt(global, env, expr),
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => if_stmt(global, env, condition, *then_branch, *else_branch),
+            Stmt::Print(value) => print_stmt(global, env, value),
+            Stmt::Return(keyword, value) => return_stmt(global, env, keyword, value),
+            Stmt::Var { name, initializer } => var_stmt(global, env, name, initializer),
+            Stmt::While(condition, body) => while_stmt(global, env, condition, *body),
+            Stmt::Func { name, params, body } => fun_stmt(env, name, params, body),
+            _ => Ok(TokenType::NIL),
+        }
     }
-}
 
-fn assign_expr(
-    global: Rc<Environment>,
-    env: Rc<Environment>,
-    name: Token,
-    expr: Expr,
-) -> Result<TokenType> {
-    let value = evaluate(global, Rc::clone(&env), expr)?;
-    if env.assign(name.get_lexeme(), value.clone()) {
-        return Ok(value);
+    pub fn block_execute(
+        global: Rc<Environment>,
+        statements: Vec<Stmt>,
+        new: Rc<Environment>,
+    ) -> Result<TokenType> {
+        for stmt in statements {
+            execute(global.clone(), new.clone(), stmt)?;
+        }
+        Ok(TokenType::NIL)
     }
-    Err(ErrWrap::new_interp(format!(
-        "Undefined variable: {}",
-        name.get_line()
-    )))
-}
+    fn expr_stmt(global: Rc<Environment>, env: Rc<Environment>, expr: Expr) -> Result<TokenType> {
+        evaluate(global, env, expr)?;
+        return Ok(TokenType::NIL);
+    }
 
-// Other Helpers
-fn is_truthy(ttype: TokenType) -> TokenType {
-    match ttype {
-        TokenType::NIL => TokenType::FALSE,
-        TokenType::FALSE => TokenType::FALSE,
-        _ => TokenType::TRUE,
-    }
-}
-fn convert_bool(ttype: TokenType) -> bool {
-    match is_truthy(ttype) {
-        TokenType::TRUE => true,
-        _ => false,
-    }
-}
-fn negation(ttype: TokenType, line: i32) -> Result<TokenType> {
-    if let TokenType::TRUE = ttype {
-        Ok(TokenType::FALSE)
-    } else if let TokenType::FALSE = ttype {
-        Ok(TokenType::TRUE)
-    } else {
-        Err(ErrWrap::new_interp(format!("Expected Boolean: {}", line)))
-    }
-}
-fn greater(l: f64, r: f64) -> Result<TokenType> {
-    if l > r {
-        Ok(TokenType::TRUE)
-    } else {
-        Ok(TokenType::FALSE)
-    }
-}
-fn greater_equal(l: f64, r: f64) -> Result<TokenType> {
-    if l >= r {
-        Ok(TokenType::TRUE)
-    } else {
-        Ok(TokenType::FALSE)
-    }
-}
-fn less(l: f64, r: f64) -> Result<TokenType> {
-    if l < r {
-        Ok(TokenType::TRUE)
-    } else {
-        Ok(TokenType::FALSE)
-    }
-}
-fn less_equal(l: f64, r: f64) -> Result<TokenType> {
-    if l <= r {
-        Ok(TokenType::TRUE)
-    } else {
-        Ok(TokenType::FALSE)
-    }
-}
-fn is_equal(left: TokenType, right: TokenType) -> Result<TokenType> {
-    if left == right {
-        Ok(TokenType::TRUE)
-    } else {
-        Ok(TokenType::FALSE)
-    }
-}
+    fn fun_stmt(
+        env: Rc<Environment>,
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+    ) -> Result<TokenType> {
+        let function: TokenType = TokenType::LitFun(Box::new(Callables::LoxFunction(
+            LoxFunction::new(name.clone(), params, body, env.clone()),
+        )));
 
-fn handle_number(ttype: TokenType, line: i32) -> Result<f64> {
-    if let TokenType::NUMBER(num) = ttype {
-        Ok(num)
-    } else {
+        env.define(name.get_lexeme(), function);
+        Ok(TokenType::NIL)
+    }
+
+    fn if_stmt(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        condition: Expr,
+        then_branch: Stmt,
+        else_branch: Stmt,
+    ) -> Result<TokenType> {
+        if convert_bool(evaluate(global.clone(), env.clone(), condition)?) {
+            execute(global, env, then_branch)?;
+        } else if else_branch != Stmt::None {
+            execute(global.clone(), env.clone(), else_branch)?;
+        }
+        Ok(TokenType::NIL)
+    }
+
+    fn print_stmt(global: Rc<Environment>, env: Rc<Environment>, expr: Expr) -> Result<TokenType> {
+        let value: TokenType = evaluate(global, env, expr)?;
+        println!("{}", value.stringify());
+        return Ok(TokenType::NIL);
+    }
+
+    fn return_stmt(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        keyword: Token,
+        value: Expr,
+    ) -> Result<TokenType> {
+        let ret_value: TokenType;
+        if value != Expr::Null {
+            ret_value = evaluate(global, env, value)?;
+        } else {
+            ret_value = TokenType::NIL;
+        }
+
+        Err(ErrWrap::ReturnErr(ret_value))
+    }
+
+    fn var_stmt(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        name: Token,
+        initializer: Expr,
+    ) -> Result<TokenType> {
+        let mut value = TokenType::NIL;
+        if initializer != Expr::Null {
+            value = evaluate(global.clone(), env.clone(), initializer)?
+        }
+        env.define(name.get_lexeme(), value);
+        Ok(TokenType::NIL)
+    }
+
+    fn while_stmt(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        condition: Expr,
+        body: Stmt,
+    ) -> Result<TokenType> {
+        while convert_bool(evaluate(global.clone(), env.clone(), condition.clone())?) {
+            execute(global.clone(), env.clone(), body.clone())?;
+        }
+        Ok(TokenType::NIL)
+    }
+
+    fn lit_expr(lit: Token) -> TokenType {
+        lit.get_type()
+    }
+
+    fn logical_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        eleft: Expr,
+        eright: Expr,
+        operator: Token,
+    ) -> Result<TokenType> {
+        let left: TokenType = evaluate(global.clone(), env.clone(), eleft)?;
+        if operator.get_type() == TokenType::OR {
+            if convert_bool(left.clone()) {
+                return Ok(left);
+            }
+        } else {
+            if !convert_bool(left.clone()) {
+                return Ok(left);
+            }
+        }
+        evaluate(global.clone(), env.clone(), eright)
+    }
+
+    fn group_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        inside: Expr,
+    ) -> Result<TokenType> {
+        Ok(evaluate(global, env, inside)?)
+    }
+
+    fn unary_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        operator: Token,
+        ex: Expr,
+    ) -> Result<TokenType> {
+        let right = evaluate(global, env, ex)?;
+        let line: i32 = operator.get_line();
+        match operator.get_type() {
+            TokenType::MINUS => Ok(TokenType::NUMBER(-handle_number(right, line)?)),
+            // TokenType::BANG => negation(is_truthy(right), line),
+            _ => Err(ErrWrap::new_interp(format!(
+                "Expected Unary Operator: line {}",
+                line
+            ))),
+        }
+    }
+
+    fn binary_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        operator: Token,
+        l: Expr,
+        r: Expr,
+    ) -> Result<TokenType> {
+        let left: TokenType = evaluate(global.clone(), env.clone(), l)?;
+        let right: TokenType = evaluate(global.clone(), env.clone(), r)?;
+        let line: i32 = operator.get_line();
+        match operator.get_type() {
+            TokenType::GREATER => greater(handle_number(left, line)?, handle_number(right, line)?),
+            TokenType::GreaterEqual => {
+                greater_equal(handle_number(left, line)?, handle_number(right, line)?)
+            }
+            TokenType::LESS => less(handle_number(left, line)?, handle_number(right, line)?),
+            TokenType::LessEqual => {
+                less_equal(handle_number(left, line)?, handle_number(right, line)?)
+            }
+            TokenType::EqualEqual => is_equal(left, right),
+            TokenType::BangEqual => negation(is_equal(left, right)?, line),
+            TokenType::MINUS => Ok(TokenType::NUMBER(
+                handle_number(left, line)? - handle_number(right, line)?,
+            )),
+            TokenType::SLASH => Ok(TokenType::NUMBER(
+                handle_number(left, line)? / handle_number(right, line)?,
+            )),
+            TokenType::STAR => Ok(TokenType::NUMBER(
+                handle_number(left, line)? * handle_number(right, line)?,
+            )),
+            TokenType::PLUS => {
+                if let TokenType::STRING(string) = left {
+                    Ok(TokenType::STRING(format!(
+                        "{}{}",
+                        string,
+                        handle_string(right, line)?
+                    )))
+                } else {
+                    Ok(TokenType::NUMBER(
+                        handle_number(left, line)? + handle_number(right, line)?,
+                    ))
+                }
+            }
+            _ => Err(ErrWrap::new_interp(format!(
+                "Incorrect binary operator: {}",
+                line
+            ))),
+        }
+    }
+
+    fn call_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        callee: Expr,
+        paren: Token,
+        arguments: Vec<Expr>,
+    ) -> Result<TokenType> {
+        let ttcallee = evaluate(global.clone(), env.clone(), callee)?;
+        let mut ttarguments: Vec<TokenType> = vec![];
+        let arg_len = arguments.len();
+        for arg in arguments {
+            ttarguments.push(evaluate(global.clone(), env.clone(), arg)?);
+        }
+
+        if let TokenType::LitFun(function) = ttcallee {
+            if arg_len != function.arity() as usize {
+                return Err(ErrWrap::new_interp(format!(
+                    "Expected {} arguments but got {}.",
+                    function.arity(),
+                    arg_len
+                )));
+            }
+            return Ok(function.call_fun(global.clone(), ttarguments)?);
+        }
         Err(ErrWrap::new_interp(format!(
-            "Expected Number: line {}",
-            line
+            "Not a callable - Can only call functions and classes: {}",
+            paren.get_line()
         )))
     }
-}
-fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
-    if let TokenType::STRING(str) = ttype {
-        Ok(str)
-    } else {
+
+    fn var_expr(env: Rc<Environment>, tok: Token) -> Result<TokenType> {
+        match env.get(tok) {
+            Ok(value) => Ok(value),
+            Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+        }
+    }
+
+    fn assign_expr(
+        global: Rc<Environment>,
+        env: Rc<Environment>,
+        name: Token,
+        expr: Expr,
+    ) -> Result<TokenType> {
+        let value = evaluate(global, Rc::clone(&env), expr)?;
+        if env.assign(name.get_lexeme(), value.clone()) {
+            return Ok(value);
+        }
         Err(ErrWrap::new_interp(format!(
-            "Expected String: line {} ",
-            line
+            "Undefined variable: {}",
+            name.get_line()
         )))
     }
-}
 
+    // Other Helpers
+    fn is_truthy(ttype: TokenType) -> TokenType {
+        match ttype {
+            TokenType::NIL => TokenType::FALSE,
+            TokenType::FALSE => TokenType::FALSE,
+            _ => TokenType::TRUE,
+        }
+    }
+    fn convert_bool(ttype: TokenType) -> bool {
+        match is_truthy(ttype) {
+            TokenType::TRUE => true,
+            _ => false,
+        }
+    }
+    fn negation(ttype: TokenType, line: i32) -> Result<TokenType> {
+        if let TokenType::TRUE = ttype {
+            Ok(TokenType::FALSE)
+        } else if let TokenType::FALSE = ttype {
+            Ok(TokenType::TRUE)
+        } else {
+            Err(ErrWrap::new_interp(format!("Expected Boolean: {}", line)))
+        }
+    }
+    fn greater(l: f64, r: f64) -> Result<TokenType> {
+        if l > r {
+            Ok(TokenType::TRUE)
+        } else {
+            Ok(TokenType::FALSE)
+        }
+    }
+    fn greater_equal(l: f64, r: f64) -> Result<TokenType> {
+        if l >= r {
+            Ok(TokenType::TRUE)
+        } else {
+            Ok(TokenType::FALSE)
+        }
+    }
+    fn less(l: f64, r: f64) -> Result<TokenType> {
+        if l < r {
+            Ok(TokenType::TRUE)
+        } else {
+            Ok(TokenType::FALSE)
+        }
+    }
+    fn less_equal(l: f64, r: f64) -> Result<TokenType> {
+        if l <= r {
+            Ok(TokenType::TRUE)
+        } else {
+            Ok(TokenType::FALSE)
+        }
+    }
+    fn is_equal(left: TokenType, right: TokenType) -> Result<TokenType> {
+        if left == right {
+            Ok(TokenType::TRUE)
+        } else {
+            Ok(TokenType::FALSE)
+        }
+    }
+
+    fn handle_number(ttype: TokenType, line: i32) -> Result<f64> {
+        if let TokenType::NUMBER(num) = ttype {
+            Ok(num)
+        } else {
+            Err(ErrWrap::new_interp(format!(
+                "Expected Number: line {}",
+                line
+            )))
+        }
+    }
+    fn handle_string(ttype: TokenType, line: i32) -> Result<String> {
+        if let TokenType::STRING(str) = ttype {
+            Ok(str)
+        } else {
+            Err(ErrWrap::new_interp(format!(
+                "Expected String: line {} ",
+                line
+            )))
+        }
+    }
+}
 // #[cfg(test)]
 // mod tests {
 //     use super::*;

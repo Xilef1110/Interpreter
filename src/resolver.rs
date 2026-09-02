@@ -99,11 +99,25 @@ impl<'a> Resolver<'a> {
         match expr {
             Expr::Variable(name) => self.var_expr(name),
             Expr::Assign { name, value } => self.assign_expr(name, *value),
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => self.binary_expr(left, right),
+            Expr::Call(callee, paren, arguments) => self.call_expr(callee, arguments),
+            Expr::Grouping(expr) => self.group_expr(expr),
+            Expr::Literal { value } => (),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => self.logic_expr(left, right),
+            Expr::Unary { operator, right } => self.unary_expr(right),
             _ => panic!("Resolved unimplemented expression"),
         };
     }
 
-    pub fn var_expr(&mut self, name: Token) -> TokenType {
+    fn var_expr(&mut self, name: Token) {
         if !self.scopes.is_empty() {
             if let Option::None = self.peek().get(&name.get_lexeme()) {
                 self.lox.parse_error(
@@ -113,10 +127,9 @@ impl<'a> Resolver<'a> {
             }
         }
         self.resolve_local(Expr::Variable(name.clone()), name);
-        TokenType::NIL
     }
 
-    pub fn assign_expr(&mut self, name: Token, value: Expr) -> TokenType {
+    fn assign_expr(&mut self, name: Token, value: Expr) {
         self.resolve_expr(value.clone());
         self.resolve_local(
             Expr::Assign {
@@ -125,7 +138,31 @@ impl<'a> Resolver<'a> {
             },
             name,
         );
-        TokenType::NIL
+    }
+
+    fn binary_expr(&mut self, left: Box<Expr>, right: Box<Expr>) {
+        self.resolve_expr(*left);
+        self.resolve_expr(*right);
+    }
+
+    fn call_expr(&mut self, callee: Box<Expr>, arguments: Vec<Expr>) {
+        self.resolve_expr(*callee);
+        for arg in arguments {
+            self.resolve_expr(arg);
+        }
+    }
+
+    fn group_expr(&mut self, expr: Box<Expr>) {
+        self.resolve_expr(*expr);
+    }
+
+    fn logic_expr(&mut self, left: Box<Expr>, right: Box<Expr>) {
+        self.resolve_expr(*left);
+        self.resolve_expr(*right);
+    }
+
+    fn unary_expr(&mut self, right: Box<Expr>) {
+        self.resolve_expr(*right);
     }
 
     // Helpers
