@@ -1,13 +1,17 @@
 use crate::callable::{Callables, LoxFunction};
 use crate::{Lox, Token, TokenType, environment::Environment, expr::Expr, stmt::Stmt};
 pub use err::ErrWrap;
-
+use std::collections::HashMap;
 use std::rc::Rc;
 
 mod err;
 
 pub type Result<T> = std::result::Result<T, ErrWrap>;
-
+pub struct Interp {
+    global: Rc<Environment>,
+    env: Rc<Environment>,
+    locals: HashMap<Expr, i32>,
+}
 // Core expression evaluation
 pub fn interpret(statements: Vec<Stmt>, lox: &mut Lox) {
     // let mut env = Environment::new_environment();

@@ -16,6 +16,7 @@ mod environment;
 pub mod expr;
 mod interp;
 mod parser;
+mod resolver;
 pub mod scanner;
 mod stmt;
 
