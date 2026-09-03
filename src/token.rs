@@ -1,6 +1,7 @@
 #[path = "token/token_type.rs"]
 pub mod token_type;
 
+use std::hash::{Hash, Hasher};
 use token_type::TokenType;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -9,6 +10,15 @@ pub struct Token {
     lexeme: String,
     line: i32,
 }
+
+impl Hash for Token {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.lexeme.hash(state);
+        self.line.hash(state);
+    }
+}
+
+impl Eq for Token {}
 
 impl Token {
     pub fn new_token(ttype: TokenType, lexeme: String, line: i32) -> Token {

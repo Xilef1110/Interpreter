@@ -278,6 +278,24 @@ impl Interp {
             name.get_line()
         )))
     }
+
+    pub fn resolve(&mut self, expr: Expr, depth: i32) {
+        self.locals.insert(expr, depth);
+    }
+
+    fn look_up_variable(&self, name: Token, expr: Expr) -> Result<TokenType> {
+        let distance: i32 = *self.locals.get(&expr).unwrap();
+        let result;
+        if distance >= 0 {
+            result = self.env.get_at(distance, name.get_lexeme());
+        } else {
+            result = self.global.get(name);
+        }
+        match result {
+            Ok(value) => Ok(value),
+            Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+        }
+    }
 }
 // Other Helpers
 fn is_truthy(ttype: TokenType) -> TokenType {

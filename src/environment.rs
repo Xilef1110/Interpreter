@@ -40,6 +40,27 @@ impl Environment {
         }
     }
 
+    fn get_with_string(&self, name: String) -> Result<TokenType> {
+        match self.map.borrow().get(&name) {
+            Some(ttype) => Ok(ttype.clone()),
+            None => match &self.enclosing {
+                Option::Some(env) => return env.get_with_string(name),
+                Option::None => Err(anyhow!("Undefined variable",)),
+            },
+        }
+    }
+
+    pub fn get_at(&self, distance: i32, name: String) -> Result<TokenType> {
+        if distance != 0 {
+            match &self.enclosing {
+                Option::Some(env) => return env.get_at(distance - 1, name),
+                Option::None => panic!(),
+            }
+        } else {
+            self.get_with_string(name)
+        }
+    }
+
     pub fn assign(&self, name: String, value: TokenType) -> bool {
         if self.map.borrow().contains_key(&name) {
             self.map.borrow_mut().insert(name, value);

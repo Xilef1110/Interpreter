@@ -6,13 +6,13 @@ use crate::{Lox, Token};
 use std::collections::HashMap;
 
 pub struct Resolver<'a> {
-    interp: &'a Interp,
+    interp: &'a mut Interp,
     lox: &'a Lox,
     scopes: Vec<HashMap<String, bool>>,
 }
 
 impl<'a> Resolver<'a> {
-    pub fn new(interp: &'a Interp, lox: &'a Lox) -> Resolver<'a> {
+    pub fn new(interp: &'a mut Interp, lox: &'a Lox) -> Resolver<'a> {
         Resolver {
             interp,
             lox,
@@ -207,7 +207,8 @@ impl<'a> Resolver<'a> {
                 .unwrap()
                 .contains_key(&name.get_lexeme())
             {
-                self.interp.resolve(expr, self.scopes.len() - 1 - i);
+                self.interp
+                    .resolve(expr, (self.scopes.len() - 1 - i) as i32);
                 return;
             }
             i -= 1;
