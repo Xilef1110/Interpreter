@@ -13,7 +13,7 @@ pub struct Interp {
     locals: HashMap<Expr, i32>,
 }
 impl Interp {
-    fn new(env: Rc<Environment>) -> Interp {
+    pub fn new(env: Rc<Environment>) -> Interp {
         Interp {
             global: Rc::clone(&env),
             env: Rc::clone(&env),
@@ -38,7 +38,7 @@ impl Interp {
         }
     }
     fn evaluate(&mut self, ex: Expr) -> Result<TokenType> {
-        match ex {
+        match ex.clone() {
             Expr::Literal { value } => Ok(self.lit_expr(value)),
             Expr::Logical {
                 left,
@@ -54,7 +54,7 @@ impl Interp {
             } => self.binary_expr(operator, *left, *right),
             Expr::Call(callee, paren, arguments) => self.call_expr(*callee, paren, arguments),
             Expr::Variable(tok) => self.var_expr(tok),
-            Expr::Assign { name, value } => self.assign_expr(name, *value),
+            Expr::Assign { name, value } => self.assign_expr(ex),
             Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
             _ => Ok(TokenType::NIL),
         }
@@ -262,21 +262,31 @@ impl Interp {
     }
 
     fn var_expr(&self, tok: Token) -> Result<TokenType> {
-        match self.env.get(tok) {
-            Ok(value) => Ok(value),
-            Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
-        }
+        self.look_up_variable(tok.clone(), Expr::Variable(tok))
+        // match self.env.get(tok) {
+        //     Ok(value) => Ok(value),
+        //     Err(err) => Err(ErrWrap::InterpErr(err.to_string())),
+        // }
     }
 
-    fn assign_expr(&mut self, name: Token, expr: Expr) -> Result<TokenType> {
-        let value = self.evaluate(expr)?;
-        if self.env.assign(name.get_lexeme(), value.clone()) {
-            return Ok(value);
+    fn assign_expr(&mut self, assign: Expr) -> Result<TokenType> {
+        let expr_value = self.evaluate(assign.clone())?;
+        let distance: Option<&i32> = self.locals.get(&assign);
+        if let Expr::Assign { name, value: _ } = assign.clone() {
+            match distance {
+                Option::None => self.global.assign(name.get_lexeme(), expr_value.clone()),
+                Option::Some(dist) => self.env.assign_at(*dist, name, expr_value.clone()),
+            };
         }
-        Err(ErrWrap::new_interp(format!(
-            "Undefined variable: {}",
-            name.get_line()
-        )))
+        Ok(expr_value)
+        // let value = self.evaluate(expr)?;
+        // if self.env.assign(name.get_lexeme(), value.clone()) {
+        //     return Ok(value);
+        // }
+        // Err(ErrWrap::new_interp(format!(
+        //     "Undefined variable: {}",
+        //     name.get_line()
+        // )))
     }
 
     pub fn resolve(&mut self, expr: Expr, depth: i32) {

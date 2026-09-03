@@ -7,7 +7,9 @@ use std::rc::Rc;
 
 use crate::callable::{Callables, Clock};
 use crate::environment::Environment;
+use crate::interp::Interp;
 use crate::parser::Parser;
+use crate::resolver::Resolver;
 use crate::scanner::TokenType;
 use crate::scanner::token::Token;
 
@@ -104,9 +106,14 @@ impl Lox {
         if self.had_error.get() {
             return;
         }
+        let mut interp = Interp::new(Rc::clone(&self.env));
+        {
+            let mut resolver = Resolver::new(&mut interp, self);
+            resolver.resolve_statements(statements.clone());
+        }
 
         // Interpret statements
-        interp::interpret(statements, self);
+        interp.interpret(statements, self);
     }
 
     pub fn scan_error(&self, line: i32, message: String) {

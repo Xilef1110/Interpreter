@@ -57,7 +57,11 @@ impl Environment {
                 Option::None => panic!(),
             }
         } else {
-            self.get_with_string(name)
+            match self.map.borrow().get(&name) {
+                Option::Some(value) => Ok(value.clone()),
+                Option::None => panic!(),
+            }
+            // self.get_with_string(name)
         }
     }
 
@@ -69,6 +73,17 @@ impl Environment {
         match &self.enclosing {
             Option::Some(env) => env.assign(name, value),
             Option::None => false,
+        }
+    }
+
+    pub fn assign_at(&self, distance: i32, name: Token, value: TokenType) -> bool {
+        if distance != 0 {
+            match &self.enclosing {
+                Option::Some(env) => return env.assign_at(distance - 1, name, value),
+                Option::None => panic!(),
+            }
+        } else {
+            self.assign(name.get_lexeme(), value)
         }
     }
 
