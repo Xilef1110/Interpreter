@@ -1,7 +1,7 @@
-# Interpretor
-Rudimentary Interprator to learn about Interpretors and Rust
+# Lox Lite
+An interpreter to learn about language design and Rust
 
-Based on: https://craftinginterpreters.com/contents.html
+Based on the Lox language: https://craftinginterpreters.com/contents.html
 
 ## Curently Implemented
 - Variables
