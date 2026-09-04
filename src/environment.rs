@@ -51,6 +51,7 @@ impl Environment {
     }
 
     pub fn get_at(&self, distance: i32, name: String) -> Result<TokenType> {
+        // dbg!(distance);
         if distance > 0 {
             match &self.enclosing {
                 Option::Some(env) => return env.get_at(distance - 1, name),
@@ -59,7 +60,10 @@ impl Environment {
         } else {
             match self.map.borrow().get(&name) {
                 Option::Some(value) => Ok(value.clone()),
-                Option::None => panic!(),
+                Option::None => {
+                    dbg!(name);
+                    panic!("Incorrect distance calculation");
+                }
             }
             // self.get_with_string(name)
         }

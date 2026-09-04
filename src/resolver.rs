@@ -118,11 +118,13 @@ impl<'a> Resolver<'a> {
 
     fn var_expr(&mut self, name: Token) {
         if !self.scopes.is_empty() {
-            if let Option::None = self.peek().get(&name.get_lexeme()) {
-                self.lox.parse_error(
-                    name.clone(),
-                    String::from("Can't read local variable in its own initializer."),
-                );
+            if let Option::Some(val) = self.peek().get(&name.get_lexeme()) {
+                if *val == false {
+                    self.lox.parse_error(
+                        name.clone(),
+                        String::from("Can't read local variable in its own initializer."),
+                    );
+                }
             }
         }
         self.resolve_local(Expr::Variable(name.clone()), name);
@@ -207,7 +209,7 @@ impl<'a> Resolver<'a> {
                 .contains_key(&name.get_lexeme())
             {
                 self.interp
-                    .resolve(expr, self.scopes.len() as i32 - 1 - i as i32);
+                    .resolve(expr, self.scopes.len() as i32 - i as i32);
                 return;
             }
             i -= 1;
