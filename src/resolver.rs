@@ -1,6 +1,5 @@
 use crate::expr::Expr;
 use crate::interp::Interp;
-use crate::scanner::TokenType;
 use crate::stmt::Stmt;
 use crate::{Lox, Token};
 use std::collections::HashMap;
@@ -43,7 +42,7 @@ impl<'a> Resolver<'a> {
             Stmt::While(condition, body) => self.while_stmt(condition, body),
             _ => panic!("unimplemented statement in resolver"),
         };
-        panic!();
+        // panic!();
     }
 
     fn block_stmt(&mut self, statements: Vec<Stmt>) {
@@ -71,11 +70,11 @@ impl<'a> Resolver<'a> {
         self.resolve_expr(expr);
     }
 
-    fn if_stmt(&mut self, condition: Expr, thenBranch: Box<Stmt>, elseBranch: Box<Stmt>) {
+    fn if_stmt(&mut self, condition: Expr, then_branch: Box<Stmt>, else_branch: Box<Stmt>) {
         self.resolve_expr(condition);
-        self.resolve_stmt(*thenBranch);
-        if *elseBranch != Stmt::None {
-            self.resolve_stmt(*elseBranch);
+        self.resolve_stmt(*then_branch);
+        if *else_branch != Stmt::None {
+            self.resolve_stmt(*else_branch);
         }
     }
 
@@ -101,18 +100,18 @@ impl<'a> Resolver<'a> {
             Expr::Assign { name, value } => self.assign_expr(name, *value),
             Expr::Binary {
                 left,
-                operator,
+                operator: _,
                 right,
             } => self.binary_expr(left, right),
-            Expr::Call(callee, paren, arguments) => self.call_expr(callee, arguments),
+            Expr::Call(callee, _paren, arguments) => self.call_expr(callee, arguments),
             Expr::Grouping(expr) => self.group_expr(expr),
-            Expr::Literal { value } => (),
+            Expr::Literal { value: _ } => (),
             Expr::Logical {
                 left,
-                operator,
+                operator: _,
                 right,
             } => self.logic_expr(left, right),
-            Expr::Unary { operator, right } => self.unary_expr(right),
+            Expr::Unary { operator: _, right } => self.unary_expr(right),
             _ => panic!("Resolved unimplemented expression"),
         };
     }

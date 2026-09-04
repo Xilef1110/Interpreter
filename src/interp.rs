@@ -54,7 +54,7 @@ impl Interp {
             } => self.binary_expr(operator, *left, *right),
             Expr::Call(callee, paren, arguments) => self.call_expr(*callee, paren, arguments),
             Expr::Variable(tok) => self.var_expr(tok),
-            Expr::Assign { name, value } => self.assign_expr(ex),
+            Expr::Assign { name: _, value: _ } => self.assign_expr(ex),
             Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
             _ => Ok(TokenType::NIL),
         }
@@ -131,7 +131,7 @@ impl Interp {
         return Ok(TokenType::NIL);
     }
 
-    fn return_stmt(&mut self, keyword: Token, value: Expr) -> Result<TokenType> {
+    fn return_stmt(&mut self, _keyword: Token, value: Expr) -> Result<TokenType> {
         let ret_value: TokenType;
         if value != Expr::Null {
             ret_value = self.evaluate(value)?;
@@ -253,7 +253,7 @@ impl Interp {
                     arg_len
                 )));
             }
-            return Ok(function.call_fun(self.global.clone(), ttarguments)?);
+            return Ok(function.call_fun(self, ttarguments)?);
         }
         Err(ErrWrap::new_interp(format!(
             "Not a callable - Can only call functions and classes: {}",
