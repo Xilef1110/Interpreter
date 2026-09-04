@@ -54,7 +54,7 @@ impl Interp {
             } => self.binary_expr(operator, *left, *right),
             Expr::Call(callee, paren, arguments) => self.call_expr(*callee, paren, arguments),
             Expr::Variable(tok) => self.var_expr(tok),
-            Expr::Assign { name: _, value: _ } => self.assign_expr(ex),
+            Expr::Assign { name, value } => self.assign_expr(name, value),
             Expr::Error => panic!("evaluated error branch"), // TODO: handle this case
             _ => Ok(TokenType::NIL),
         }
@@ -269,15 +269,16 @@ impl Interp {
         // }
     }
 
-    fn assign_expr(&mut self, assign: Expr) -> Result<TokenType> {
-        let expr_value = self.evaluate(assign.clone())?;
-        let distance: Option<&i32> = self.locals.get(&assign);
-        if let Expr::Assign { name, value: _ } = assign.clone() {
-            match distance {
-                Option::None => self.global.assign(name.get_lexeme(), expr_value.clone()),
-                Option::Some(dist) => self.env.assign_at(*dist, name, expr_value.clone()),
-            };
-        }
+    fn assign_expr(&mut self, name: Token, value: Box<Expr>) -> Result<TokenType> {
+        let expr_value = self.evaluate(*value.clone())?;
+        let distance: Option<&i32> = self.locals.get(&Expr::Assign {
+            name: name.clone(),
+            value: value,
+        });
+        match distance {
+            Option::None => self.global.assign(name.get_lexeme(), expr_value.clone()),
+            Option::Some(dist) => self.env.assign_at(*dist, name, expr_value.clone()),
+        };
         Ok(expr_value)
         // let value = self.evaluate(expr)?;
         // if self.env.assign(name.get_lexeme(), value.clone()) {
