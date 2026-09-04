@@ -294,12 +294,10 @@ impl Interp {
     }
 
     fn look_up_variable(&self, name: Token, expr: Expr) -> Result<TokenType> {
-        let distance: i32 = *self.locals.get(&expr).unwrap();
         let result;
-        if distance >= 0 {
-            result = self.env.get_at(distance, name.get_lexeme());
-        } else {
-            result = self.global.get(name);
+        match self.locals.get(&expr) {
+            Option::Some(dist) => result = self.env.get_at(*dist, name.get_lexeme()),
+            Option::None => result = self.global.get(name),
         }
         match result {
             Ok(value) => Ok(value),
