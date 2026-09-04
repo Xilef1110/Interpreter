@@ -51,7 +51,7 @@ impl Environment {
     }
 
     pub fn get_at(&self, distance: i32, name: String) -> Result<TokenType> {
-        if distance != 0 {
+        if distance > 0 {
             match &self.enclosing {
                 Option::Some(env) => return env.get_at(distance - 1, name),
                 Option::None => panic!(),

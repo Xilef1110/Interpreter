@@ -117,10 +117,12 @@ impl Lox {
     }
 
     pub fn scan_error(&self, line: i32, message: String) {
+        println!("Scan error");
         self.report(line, "".to_string(), message);
     }
 
     pub fn parse_error(&self, tok: Token, message: String) {
+        println!("parse error");
         match tok.get_type() {
             TokenType::EOF => self.report(tok.get_line(), " at end".to_string(), message),
             _ => self.report(
@@ -141,6 +143,7 @@ impl Lox {
     }
 
     fn runtime_report(&mut self, message: String) {
+        println!("Runtime Error");
         println!("{}", message);
         self.had_runtime_error.set(true);
     }

@@ -194,7 +194,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn peek(&mut self) -> &HashMap<String, bool> {
-        &self.scopes[self.scopes.len()]
+        &self.scopes[self.scopes.len() - 1]
     }
 
     fn resolve_local(&mut self, expr: Expr, name: Token) {
@@ -207,7 +207,7 @@ impl<'a> Resolver<'a> {
                 .contains_key(&name.get_lexeme())
             {
                 self.interp
-                    .resolve(expr, (self.scopes.len() - 1 - i) as i32);
+                    .resolve(expr, self.scopes.len() as i32 - 1 - i as i32);
                 return;
             }
             i -= 1;
